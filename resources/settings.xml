@@ -15,6 +15,8 @@
     <setting id="no_spoilers" type="enum" label="170" lvalues="1700|1701|1702|1703|1704" />  
     <setting id="fav_team" type="labelenum" label="180" default="None" values="None|Washington Nationals|Toronto Blue Jays|Texas Rangers|Tampa Bay Rays|St. Louis Cardinals|Seattle Mariners|San Francisco Giants|San Diego Padres|Pittsburgh Pirates|Philadelphia Phillies|Oakland Athletics|New York Yankees|New York Mets|Minnesota Twins|Milwaukee Brewers|Los Angeles Dodgers|Los Angeles Angels|Kansas City Royals|Miami Marlins|Houston Astros|Detroit Tigers|Colorado Rockies|Cleveland Indians|Cincinnati Reds|Chicago White Sox|Chicago Cubs|Boston Red Sox|Baltimore Orioles|Atlanta Braves|Arizona Diamondbacks" />
 
+    <setting id="in_market" type="labelenum" label="300" default="Show" values="Show|Hide" />  
+    
     <setting id="team_names" type="select" label="1901" lvalues="1901|1903" default="0" />
     <setting id="time_format" type="select" label="200" lvalues="2000|2001" default="0" />
 
