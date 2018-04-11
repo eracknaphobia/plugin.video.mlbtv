@@ -230,13 +230,21 @@ class Account:
 
         if QUALITY == 'Always Ask':
             stream_url = self.get_stream_quality(stream_url)
-        headers = '|User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'
+        headers = 'User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'
         headers += '&Authorization=' + auth
         headers += '&Cookie='
         cookies = requests.utils.dict_from_cookiejar(self.util.load_cookies())
         for key, value in cookies.iteritems():
             headers += key + '=' + value + '; '
-
+            
+        #CDN
+        akc_url = 'hlslive-aksc'
+        l3c_url = 'hlslive-l3c'
+        if CDN == 'Akamai' and akc_url not in stream_url:
+            stream_url = stream_url.replace(l3c_url, akc_url)
+        elif CDN == 'Level 3' and l3c_url not in stream_url:
+            stream_url = stream_url.replace(akc_url, l3c_url)
+        
         return stream_url, headers
 
     def get_stream_quality(self, stream_url):

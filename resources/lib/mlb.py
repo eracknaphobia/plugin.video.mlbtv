@@ -272,20 +272,16 @@ def highlight_select_stream(json_source):
 
 
 def play_stream(stream_url, headers):
-    listitem = xbmcgui.ListItem()
-    """    
     if xbmc.getCondVisibility('System.HasAddon(inputstream.adaptive)'):
-        xbmc.log("USING INPUTSTREAM ADAPTIVE!!!")
+        listitem = xbmcgui.ListItem(path=stream_url)
         listitem.setProperty('inputstreamaddon', 'inputstream.adaptive')
         listitem.setProperty('inputstream.adaptive.manifest_type', 'hls')
         listitem.setProperty('inputstream.adaptive.stream_headers', headers)
-        listitem.setProperty('inputstream.adaptive.license_key', headers)
+        listitem.setProperty('inputstream.adaptive.license_key', "|" + headers)
     else:
-        xbmc.log("NOT USING INPUTSTREAM ADAPTIVE!!!")
-    """
-    stream_url += headers
+        listitem = xbmcgui.ListItem(path=stream_url + '|' + headers)
+        listitem.setMimeType("application/x-mpegURL")
 
-    listitem.setPath(stream_url)
     listitem.setMimeType("application/x-mpegURL")
     xbmcplugin.setResolvedUrl(handle=addon_handle, succeeded=True, listitem=listitem)
 
