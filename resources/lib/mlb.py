@@ -202,16 +202,7 @@ def stream_select(game_pk):
     for item in epg:
         xbmc.log(str(item))
         if item['mediaState'] != 'MEDIA_OFF':
-            if IN_MARKET == 'Hide':
-                if item['mediaFeedType'] != 'IN_MARKET_HOME' and item['mediaFeedType'] != 'IN_MARKET_AWAY':
-                    title = str(item['mediaFeedType']).title()
-                    title = title.replace('_', ' ')
-                    stream_title.append(title + " (" + item['callLetters'].encode('utf-8') + ")")
-                    media_state.append(item['mediaState'])
-                    #media_id.append(item['mediaId'])
-                    content_id.append(item['contentId'])
-                    # playback_scenario.append(str(item['playback_scenario']))
-            else:
+            if not (IN_MARKET == 'Hide' and (item['mediaFeedType'] == 'IN_MARKET_HOME' or item['mediaFeedType'] == 'IN_MARKET_AWAY')):
                 title = str(item['mediaFeedType']).title()
                 title = title.replace('_', ' ')
                 stream_title.append(title + " (" + item['callLetters'].encode('utf-8') + ")")
