@@ -1,0 +1,4 @@
+<favourites>
+    <favourite name="Mariners" thumb="special://home/addons/plugin.video.mlbtv/resources/images/mariners.png">RunScript(special://home/addons/plugin.video.mlbtv/resources/scripts/mariners.py)</favourite>
+    <favourite name="MLB.TV®" thumb="special://home/addons/plugin.video.mlbtv/icon.png">RunScript(special://home/addons/plugin.video.mlbtv/resources/scripts/mlb-today.py)</favourite>
+</favourites>

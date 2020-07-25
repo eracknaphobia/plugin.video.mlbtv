@@ -118,7 +118,7 @@ class Account:
 
         return auth, r.json()['data']['Airings'][0]['playbackUrls'][0]['href']
 
-    def get_stream(self, content_id):
+    def get_stream_with_headers_as_map(self, content_id):
         auth, url = self.get_playback_url(content_id)
         url = url.replace('{scenario}','browser~csai')
 
@@ -130,7 +130,9 @@ class Account:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'
         }
 
+        xbmc.log('TEDROMER %s' % url, level=xbmc.LOGNOTICE)
         r = requests.get(url, headers=headers, cookies=self.util.load_cookies(), verify=self.verify)
+        xbmc.log('TEDROMER resp %s' % r.status_code, level=xbmc.LOGNOTICE)
         if r.status_code != 200:
             dialog = xbmcgui.Dialog()
             title = "Error Occured"
@@ -147,12 +149,15 @@ class Account:
 
         if QUALITY == 'Always Ask':
             stream_url = self.get_stream_quality(stream_url)
-        headers = 'User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'
-        headers += '&Authorization=' + auth
-        headers += '&Cookie='
         cookies = requests.utils.dict_from_cookiejar(self.util.load_cookies())
+        cookie_val = ''
         for key, value in cookies.iteritems():
-            headers += key + '=' + value + '; '
+            cookie_val += key + '=' + value + '; '
+        headers = {
+            'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36',
+            'Authorization' : auth,
+            'Cookie' : cookie_val
+        }
             
         #CDN
         akc_url = 'hlslive-aksc'
@@ -163,6 +168,16 @@ class Account:
             stream_url = stream_url.replace(akc_url, l3c_url)
         
         return stream_url, headers
+
+    
+    def get_stream(self, content_id):
+        (stream_url, headers_map) = get_stream_with_headers_as_map(self, content_id)
+        entries = []
+        for k, v in headers_map.iteritems():
+            entries.append('%s=%s', k, v)
+            
+        return stream_url, '&'.join(entries)
+
 
     def get_stream_quality(self, stream_url):
         #Check if inputstream adaptive is on, if so warn user and return master m3u8

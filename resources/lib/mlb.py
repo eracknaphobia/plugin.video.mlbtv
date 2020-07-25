@@ -467,5 +467,77 @@ def my_teams_games():
         dialog.ok('Favorite Team Not Set', msg)
 
 
+def fallback(msg):
+    # fall back on today's games
+    dialog = xbmcgui.Dialog()
+    dialog.notification('No games found', msg, ICON, 5000, False)
+    xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "Addons.ExecuteAddon","params": {"addonid": "plugin.video.mlbtv","params": {"mode" : "101"}},"id": 1}')
+    
 
+# e.g. for Mariners 136 RSNW
+def play_teams_game(team_id, call_letters):
+    xbmc.log('enter play_teams_game', level=xbmc.LOGNOTICE)
+    game_day = localToEastern()
+    url = 'https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=%s&teamId=%s' % (game_day, team_id)
+    xbmc.log('TEDROMER %s' % url, level=xbmc.LOGNOTICE)
+    headers = {
+        'User-Agent': UA_ANDROID
+    }
+    r = requests.get(url,headers=headers, verify=VERIFY)
+    json_source = r.json()
+    xbmc.log('TEDROMER: %s' % str(json_source))
+    xbmc.log('TEDROMER got resp' ,level=xbmc.LOGNOTICE)
+    if len(json_source['dates']) == 1:
+        games = json_source['dates'][0]['games']
+        if len(games) != 1:
+            fallback("No games found for today, or possibly a double header.")
+            return
+
+    url = 'https://statsapi.mlb.com/api/v1/game/' + str(games[0]['gamePk']) + '/content'
+    xbmc.log('TEDROMER %s' % url, level=xbmc.LOGNOTICE)
+    r = requests.get(url, headers=headers, verify=VERIFY)
+    json_source = r.json()
+    xbmc.log('TEDROMER: %s' % str(json_source))
+    xbmc.log('TEDROMER got resp', level=xbmc.LOGNOTICE)
+
+    epg = json_source['media']['epg'][0]['items']
+    content_id = None
+    content_map = {}
+    for item in epg:
+        xbmc.log(str(item))
+        media_feed_type = item['mediaFeedType']
+        if item['mediaState'] != 'MEDIA_OFF' and (media_feed_type == 'HOME' or media_feed_type == 'AWAY'):
+            content_map[item['callLetters']] = item['contentId']
+
+    for k in [call_letters, 'ESPN', 'FOX', 'FS1', 'TBS', 'ESPN2', 'MLBN', 'CBS', 'TNT']:
+        if k in content_map:
+            content_id = content_map[k]
+            break
+
+    if not content_id:
+        fallback("Current broadcast on %s not found" % call_letters)
+        return
+
+    stream_url = ''
+    xbmc.log('TEDROMER Account()', level=xbmc.LOGNOTICE)
+    account = Account()
+    xbmc.log('TEDROMER get_stream...', level=xbmc.LOGNOTICE)
+    stream_url, headers = account.get_stream_with_headers_as_map(content_id)
+    Authorization = headers['Authorization']
+
+    if not '.m3u8' in stream_url:
+        fallback("Unable to play stream, url is %s" %  stream_url)
+        return
+
+    xbmc.log('TEDROMER stream_url %s ' % stream_url)
+    xbmc.log('TEDROMER headers %s ' % str(headers))
+    extended_url = '%s|Authorization=%s' % (stream_url, Authorization)
+    xbmc.log('TEDROMER extended_url %s ' % str(extended_url))
+    xbmc.log('TEDROMER play', level=xbmc.LOGNOTICE)                                                                 
+
+    list_item = xbmcgui.ListItem(label='baseball game')
+    list_item.setProperty('IsPlayable', 'true')
+    list_item.setPath(extended_url)
+    xbmc.Player().play(extended_url, list_item)
+    xbmc.log('TEDROMER HTH', level=xbmc.LOGNOTICE)
 
