@@ -3,6 +3,7 @@ from utils import Util
 from resources.lib.globals import *
 import xbmc, xbmcaddon, xbmcgui
 import time, uuid
+import urllib.parse
 
 class Account:
     addon = xbmcaddon.Addon()
@@ -48,7 +49,8 @@ class Account:
 
             url = 'https://ids.mlb.com/oauth2/aus1m088yK07noBfh356/v1/token'
             payload = ('grant_type=password&username=%s&password=%s&scope=openid offline_access'
-                       '&client_id=0oa3e1nutA1HLzAKG356') % (self.username, self.password)
+                       '&client_id=0oa3e1nutA1HLzAKG356') % (urllib.parse.quote(self.username), 
+                                                             urllib.parse.quote(self.password))
 
             r = requests.post(url, headers=headers, data=payload, verify=self.verify)
             login_token = r.json()['access_token']
