@@ -44,6 +44,7 @@ TEAM_NAMES = settings.getSetting(id="team_names")
 TIME_FORMAT = settings.getSetting(id="time_format")
 SINGLE_TEAM = str(settings.getSetting(id='single_team'))
 CATCH_UP = str(settings.getSetting(id='catch_up'))
+ONLY_FREE_GAMES = str(settings.getSetting(id="only_free_games"))
 
 #Proxy Settings
 PROXY_ENABLED = str(settings.getSetting(id='use_proxy'))
