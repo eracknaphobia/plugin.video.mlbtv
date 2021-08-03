@@ -153,10 +153,10 @@ class Account:
             dialog.notification(LOCAL_STRING(30270), msg, self.icon, 5000, False)
             sys.exit()
 
-        if 'slide' in r.json()['stream']:
-            stream_url = r.json()['stream']['slide']
-        else:
+        if 'complete' in r.json()['stream']:
             stream_url = r.json()['stream']['complete']
+        else:
+            stream_url = r.json()['stream']['slide']
 
         if QUALITY == 'Always Ask':
             stream_url = self.get_stream_quality(stream_url)

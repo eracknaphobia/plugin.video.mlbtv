@@ -139,7 +139,9 @@ def create_game_listitem(game, game_day):
     stream_date = str(game_day)
 
     desc = ''
+    spoiler = True
     if NO_SPOILERS == '1' or (NO_SPOILERS == '2' and fav_game) or (NO_SPOILERS == '3' and game_day == localToEastern()) or (NO_SPOILERS == '4' and game_day < localToEastern()) or game['status']['abstractGameState'] == 'Preview':
+        spoiler = False
         name = game_time + ' ' + away_team + ' at ' + home_team
     else:
         name = game_time + ' ' + away_team
@@ -189,10 +191,10 @@ def create_game_listitem(game, game_day):
     # If set only show free games in the list
     if ONLY_FREE_GAMES == 'true' and not game['content']['media']['freeGame']:
         return 
-    add_stream(name, title, game_pk, icon, fanart, info, video_info, audio_info, stream_date)
+    add_stream(name, title, game_pk, icon, fanart, info, video_info, audio_info, stream_date, spoiler)
 
 
-def stream_select(game_pk):
+def stream_select(game_pk, spoiler=True):
     url = 'https://statsapi.mlb.com/api/v1/game/' + game_pk + '/content'
     headers = {
         'User-Agent': UA_ANDROID
@@ -234,16 +236,20 @@ def stream_select(game_pk):
         account = Account()
         stream_url, headers = account.get_stream(content_id[n-1])
         if epg[0]['mediaState'] == "MEDIA_ON" and CATCH_UP == 'true':
-            p = dialog.select('Select a Start Point', ['Catch Up', 'Live'])
+            p = dialog.select('Select a Start Point', ['Catch Up', 'Beginning', 'Live'])
             if p == 0:
                 listitem = stream_to_listitem(stream_url, headers)
                 highlight_select_stream(json_source['highlights']['live']['items'], listitem)
                 sys.exit()
+            elif p == 1:
+                spoiler = "False"
+            elif p == 2:
+                spoiler = "True"
             elif p == -1:
                 sys.exit()
 
     if '.m3u8' in stream_url:
-        play_stream(stream_url, headers)
+        play_stream(stream_url, headers, spoiler)
 
     elif stream_title[n] == 'Highlights':
         highlight_select_stream(json_source['highlights']['highlights']['items'])
@@ -292,8 +298,8 @@ def highlight_select_stream(json_source, catchup=None):
         xbmcplugin.setResolvedUrl(handle=addon_handle, succeeded=True, listitem=playlist[0])
 
 
-def play_stream(stream_url, headers):
-    listitem = stream_to_listitem(stream_url, headers)
+def play_stream(stream_url, headers, spoiler=True):
+    listitem = stream_to_listitem(stream_url, headers, spoiler)
     xbmcplugin.setResolvedUrl(handle=addon_handle, succeeded=True, listitem=listitem)
 
 

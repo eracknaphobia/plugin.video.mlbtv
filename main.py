@@ -8,6 +8,7 @@ game_pk = None
 gid = None
 teams_stream = None
 stream_date = None
+spoiler = True
 
 if 'name' in params:
     name = urllib.unquote_plus(params["name"])
@@ -27,6 +28,9 @@ if 'teams_stream' in params:
 if 'stream_date' in params:
     stream_date = urllib.unquote_plus(params["stream_date"])
 
+if 'spoiler' in params:
+    spoiler = urllib.unquote_plus(params["spoiler"])
+
 if mode is None:
     categories()
 
@@ -39,7 +43,7 @@ elif mode == 101:
 
 
 elif mode == 104:
-    stream_select(game_pk)
+    stream_select(game_pk, spoiler)
 
 elif mode == 105:
     # Yesterday's Games
