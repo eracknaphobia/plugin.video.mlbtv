@@ -130,10 +130,14 @@ class Account:
             dialog.notification(LOCAL_STRING(30270), msg, self.icon, 5000, False)
             sys.exit()
 
-        return auth, r.json()['data']['Airings'][0]['playbackUrls'][0]['href']
+        offset_index = 0
+        if r.json()['data']['Airings'][0]['milestones'][0]['milestoneTime'][1]['type'] == 'offset':
+            offset_index = 1
+        broadcast_start = r.json()['data']['Airings'][0]['milestones'][0]['milestoneTime'][offset_index]['start']
+        return auth, r.json()['data']['Airings'][0]['playbackUrls'][0]['href'], broadcast_start
 
     def get_stream(self, content_id):
-        auth, url = self.get_playback_url(content_id)
+        auth, url, broadcast_start = self.get_playback_url(content_id)
 
         url = url.replace('{scenario}','browser~csai')
         headers = {
@@ -177,7 +181,7 @@ class Account:
         elif CDN == 'Level 3' and l3c_url not in stream_url:
             stream_url = stream_url.replace(akc_url, l3c_url)
         
-        return stream_url, headers
+        return stream_url, headers, broadcast_start
 
     def get_stream_quality(self, stream_url):
         #Check if inputstream adaptive is on, if so warn user and return master m3u8

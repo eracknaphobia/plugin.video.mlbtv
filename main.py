@@ -8,7 +8,7 @@ game_pk = None
 gid = None
 teams_stream = None
 stream_date = None
-spoiler = True
+spoiler = 'True'
 
 if 'name' in params:
     name = urllib.unquote_plus(params["name"])

@@ -178,7 +178,7 @@ def get_params():
     return param
 
 
-def add_stream(name, title, game_pk, icon=None, fanart=None, info=None, video_info=None, audio_info=None, stream_date=None, spoiler=True):
+def add_stream(name, title, game_pk, icon=None, fanart=None, info=None, video_info=None, audio_info=None, stream_date=None, spoiler='True'):
     ok=True
     u=sys.argv[0]+"?mode="+str(104)+"&name="+urllib.quote_plus(name)+"&game_pk="+urllib.quote_plus(str(game_pk))+"&stream_date="+urllib.quote_plus(str(stream_date))+"&spoiler="+urllib.quote_plus(str(spoiler))
 
@@ -458,7 +458,7 @@ def load_cookies():
     return cj
 
 
-def stream_to_listitem(stream_url, headers, spoiler=True):
+def stream_to_listitem(stream_url, headers, spoiler='True', start='1'):
     if xbmc.getCondVisibility('System.HasAddon(inputstream.adaptive)'):
         listitem = xbmcgui.ListItem(path=stream_url)
         if KODI_VERSION >= 19:
@@ -469,8 +469,8 @@ def stream_to_listitem(stream_url, headers, spoiler=True):
         listitem.setProperty('inputstream.adaptive.stream_headers', headers)
         listitem.setProperty('inputstream.adaptive.license_key', "|" + headers)
         if spoiler == "False":
-            listitem.setProperty('ResumeTime', '1')
-            listitem.setProperty('TotalTime', '1')
+            listitem.setProperty('ResumeTime', start)
+            listitem.setProperty('TotalTime', start)
     else:
         listitem = xbmcgui.ListItem(path=stream_url + '|' + headers)
 
