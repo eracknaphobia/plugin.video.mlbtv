@@ -202,7 +202,10 @@ def stream_select(game_pk, spoiler=True):
     r = requests.get(url, headers=headers, verify=VERIFY)
     json_source = r.json()
 
-    stream_title = ['Highlights']
+    if sys.argv[3] == 'resume:true':
+        stream_title = []
+    else:
+        stream_title = ['Highlights']
     media_state = []
     content_id = []
     epg = json_source['media']['epg'][0]['items']
@@ -235,7 +238,9 @@ def stream_select(game_pk, spoiler=True):
     if n > -1 and stream_title[n] != 'Highlights':
         account = Account()
         stream_url, headers = account.get_stream(content_id[n-1])
-        if epg[0]['mediaState'] == "MEDIA_ON" and CATCH_UP == 'true':
+        if sys.argv[3] == 'resume:true':
+            spoiler = "True"
+        elif epg[0]['mediaState'] == "MEDIA_ON" and CATCH_UP == 'true':
             p = dialog.select('Select a Start Point', ['Catch Up', 'Beginning', 'Live'])
             if p == 0:
                 listitem = stream_to_listitem(stream_url, headers)
