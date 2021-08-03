@@ -247,7 +247,7 @@ def stream_select(game_pk, spoiler='True'):
             p = dialog.select('Select a Start Point', ['Catch Up', 'Beginning', 'Live'])
             if p == 0:
                 listitem = stream_to_listitem(stream_url, headers)
-                highlight_select_stream(json_source['highlights']['live']['items'], listitem)
+                highlight_select_stream(json_source['highlights']['highlights']['items'], listitem)
                 sys.exit()
             elif p == 1:
                 spoiler = "False"
