@@ -204,8 +204,10 @@ def stream_select(game_pk, spoiler=True):
 
     if sys.argv[3] == 'resume:true':
         stream_title = []
+        highlight_offset = 0
     else:
         stream_title = ['Highlights']
+        highlight_offset = 1
     media_state = []
     content_id = []
     epg = json_source['media']['epg'][0]['items']
@@ -218,7 +220,7 @@ def stream_select(game_pk, spoiler=True):
                 if 'HOME' in title.upper():
                     media_state.insert(0, item['mediaState'])
                     content_id.insert(0, item['contentId'])
-                    stream_title.insert(1, title + " (" + item['callLetters'] + ")")
+                    stream_title.insert(highlight_offset, title + " (" + item['callLetters'] + ")")
                 else:
                     media_state.append(item['mediaState'])
                     content_id.append(item['contentId'])
@@ -237,7 +239,7 @@ def stream_select(game_pk, spoiler=True):
     n = dialog.select('Choose Stream', stream_title)
     if n > -1 and stream_title[n] != 'Highlights':
         account = Account()
-        stream_url, headers = account.get_stream(content_id[n-1])
+        stream_url, headers = account.get_stream(content_id[n-highlight_offset])
         if sys.argv[3] == 'resume:true':
             spoiler = "True"
         elif epg[0]['mediaState'] == "MEDIA_ON" and CATCH_UP == 'true':
