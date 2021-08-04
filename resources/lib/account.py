@@ -130,10 +130,17 @@ class Account:
             dialog.notification(LOCAL_STRING(30270), msg, self.icon, 5000, False)
             sys.exit()
 
-        offset_index = 0
-        if r.json()['data']['Airings'][0]['milestones'][0]['milestoneTime'][1]['type'] == 'offset':
-            offset_index = 1
-        broadcast_start = r.json()['data']['Airings'][0]['milestones'][0]['milestoneTime'][offset_index]['start']
+        broadcast_start = '1'
+        try:
+            offset_index = 0
+            if r.json()['data']['Airings'][0]['milestones'][0]['milestoneTime'][1]['type'] == 'offset':
+                offset_index = 1
+            broadcast_start = r.json()['data']['Airings'][0]['milestones'][0]['milestoneTime'][offset_index]['start']
+            if isinstance(broadcast_start, int):
+                broadcast_start = str(broadcast_start)
+        except:
+            pass
+        
         return auth, r.json()['data']['Airings'][0]['playbackUrls'][0]['href'], broadcast_start
 
     def get_stream(self, content_id):
