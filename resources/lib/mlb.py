@@ -315,7 +315,7 @@ def play_stream(stream_url, headers, spoiler='True', start='1'):
 def get_highlights(items):
     xbmc.log(str(items))
     highlights = []
-    for item in items:
+    for item in sorted(items, key=lambda x: x['date']):
         for playback in item['playbacks']:
             if 'hlsCloud' in playback['name']:
                 clip_url = playback['url']
