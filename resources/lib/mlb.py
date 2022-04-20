@@ -464,6 +464,7 @@ def stream_select(game_pk, spoiler='True'):
 # select a stream for a featured video
 def featured_stream_select(featured_video, name):
     xbmc.log('video select')
+    account = Account()
     video_url = None
     # check if our request video is a URL
     if featured_video.startswith('http'):
@@ -500,8 +501,6 @@ def featured_stream_select(featured_video, name):
     # otherwise we need to authenticate and get the stream URL
     else:
         xbmc.log('fetching video stream from url')
-        # we need an account for this step
-        account = Account()
         # need a special token for Big Inning
         okta_access_token = account.okta_access_token()
         if okta_access_token is None:
