@@ -258,7 +258,7 @@ def addPlaylist(name,game_day,mode,icon,fanart=None):
     if fanart is None: fanart = FANART
     liz.setArt({'icon': icon, 'thumb': icon, 'fanart': fanart})
     liz.setInfo( type="Video", infoLabels={ "Title": name } )
-    game_day_display = parse(game_day).strftime('%A, %B %-d, %Y')
+    game_day_display = parse(game_day).strftime('%A, %B %d, %Y')
     info = {'plot': LOCAL_STRING(30375)+game_day_display,'tvshowtitle':'MLB','title':name,'originaltitle':name,'aired':game_day,'genre':LOCAL_STRING(700),'mediatype':'video'}
     # Get audio/video info
     audio_info, video_info = getAudioVideoInfo()
