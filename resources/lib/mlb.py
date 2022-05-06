@@ -44,11 +44,11 @@ def todays_games(game_day):
     r = requests.get(url,headers=headers, verify=VERIFY)
     json_source = r.json()
 
-    # try:
-    for game in json_source['dates'][0]['games']:
-        create_game_listitem(game, game_day)
-    # except:
-    #     pass
+    try:
+        for game in json_source['dates'][0]['games']:
+            create_game_listitem(game, game_day)
+    except:
+        pass
 
     next_day = display_day + timedelta(days=1)
     addDir('[B]%s >>[/B]' % LOCAL_STRING(30011), 101, NEXT_ICON, FANART, next_day.strftime("%Y-%m-%d"))
@@ -170,11 +170,12 @@ def create_game_listitem(game, game_day):
         name += ' at ' + home_team
         if 'linescore' in game: name += ' ' + colorString(str(game['linescore']['teams']['home']['runs']), SCORE_COLOR)
 
-        # added flags
-        if game['flags']['perfectGame'] == True:
-            name += ' ' + colorString('(Perfect Game)', CRITICAL)
-        elif game['flags']['noHitter'] == True:
-            name += ' ' + colorString('(No-Hitter)', CRITICAL)
+        # check flags
+        if 'flags' in game:
+            if game['flags']['perfectGame'] == True:
+                name += ' ' + colorString('(Perfect Game)', CRITICAL)
+            elif game['flags']['noHitter'] == True:
+                name += ' ' + colorString('(No-Hitter)', CRITICAL)
 
     if game['doubleHeader'] != 'N':
         name += ' (Game ' + str(game['gameNumber']) + ')'

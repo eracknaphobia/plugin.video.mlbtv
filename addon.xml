@@ -21,7 +21,8 @@
         </description>
         <disclaimer lang="en_GB">Requires an MLB.tv account</disclaimer>
         <news>
-            - improve free game check
+            - restored pass exceptions for game list items
+            - handle missing flags for postponements
         </news>
         <language>en</language>
         <platform>all</platform>
