@@ -23,6 +23,8 @@
         <news>
             - restored pass exceptions for game list items
             - handle missing flags for postponements
+            - added setting for auto selecting a stream (favorite/home)
+            - added context menu item for choosing stream manually
         </news>
         <language>en</language>
         <platform>all</platform>

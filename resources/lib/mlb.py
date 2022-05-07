@@ -366,7 +366,7 @@ def create_big_inning_listitem(game_day):
         pass
 
 
-def stream_select(game_pk, spoiler='True'):
+def stream_select(game_pk, spoiler='True', from_context_menu=False):
     url = API_URL + '/api/v1/game/' + game_pk + '/content'
     headers = {
         'User-Agent': UA_ANDROID
@@ -374,51 +374,7 @@ def stream_select(game_pk, spoiler='True'):
     r = requests.get(url, headers=headers, verify=VERIFY)
     json_source = r.json()
 
-    if sys.argv[3] == 'resume:true':
-        stream_title = []
-        highlight_offset = 0
-    else:
-        stream_title = [LOCAL_STRING(30391)]
-        highlight_offset = 1
-    media_state = []
-    content_id = []
-    # combine tv and radio items
-    epg = json_source['media']['epg'][0]['items'] + json_source['media']['epg'][2]['items']
-    for item in epg:
-        xbmc.log(str(item))
-        if item['mediaState'] != 'MEDIA_OFF':
-            # tv and radio items use different variables for home/away
-            if 'mediaFeedType' in item:
-                media_feed_type = str(item['mediaFeedType'])
-            else:
-                media_feed_type = str(item['type'])
-            if IN_MARKET != 'Hide' or (media_feed_type != 'IN_MARKET_HOME' and media_feed_type != 'IN_MARKET_AWAY'):
-                title = media_feed_type.title()
-                title = title.replace('_', ' ')
-                if 'mediaFeedType' in item:
-                    title += LOCAL_STRING(30392)
-                else:
-                    if item['language'] == 'en':
-                        title += LOCAL_STRING(30394)
-                    elif item['language'] == 'es':
-                        title += LOCAL_STRING(30395)
-                    title += LOCAL_STRING(30393)
-                if 'mediaFeedType' in item and ('HOME' in title.upper() or 'NATIONAL' in title.upper()):
-                    media_state.insert(0, item['mediaState'])
-                    content_id.insert(0, item['contentId'])
-                    stream_title.insert(highlight_offset, title + " (" + item['callLetters'] + ")")
-                else:
-                    media_state.append(item['mediaState'])
-                    content_id.append(item['contentId'])
-                    stream_title.append(title + " (" + item['callLetters'] + ")")
-
-    # All past games should have highlights
-    if len(stream_title) == 0:
-        dialog = xbmcgui.Dialog()
-        dialog.notification(LOCAL_STRING(30383), LOCAL_STRING(30384), ICON, 5000, False)
-        xbmcplugin.setResolvedUrl(addon_handle, False, xbmcgui.ListItem())
-        sys.exit()
-
+    selected_content_id = None
     stream_url = ''
     start = '1'
     stream_type = 'video'
@@ -427,22 +383,84 @@ def stream_select(game_pk, spoiler='True'):
     is_live = False
     start_inning = 0
     start_inning_half = 'top'
-
     dialog = xbmcgui.Dialog()
-    n = dialog.select(LOCAL_STRING(30390), stream_title)
-    if n == -1:
-        sys.exit()
-    elif n > -1 and stream_title[n] != LOCAL_STRING(30391):
-        # check if selected stream is a radio stream, which can't play with inputstream adaptive
-        if LOCAL_STRING(30393) in stream_title[n]:
-            stream_type = 'audio'
+
+    # if auto select stream is enabled and not bypassed with context menu item, loop through looking for favorite team's feed or home/national feed, in that order
+    if AUTO_SELECT_STREAM == 'true' and from_context_menu == False:
+        epg = json_source['media']['epg'][0]['items']
+        for item in epg:
+            if item['mediaState'] != 'MEDIA_OFF':
+                if 'mediaFeedType' in item and item['mediaFeedType'] != 'IN_MARKET_HOME' and item['mediaFeedType'] != 'IN_MARKET_AWAY':
+                    if FAV_TEAM != 'None' and 'mediaFeedSubType' in item and item['mediaFeedSubType'] == getFavTeamId():
+                        selected_content_id = item['contentId']
+                        break
+                    elif selected_content_id is None and 'mediaFeedType' in item and (item['mediaFeedType'] == 'HOME' or item['mediaFeedType'] == 'NATIONAL' ):
+                        selected_content_id = item['contentId']
+
+    # fallback to manual stream selection if auto is disabled, bypassed, or didn't find anything
+    if selected_content_id is None:
+        if sys.argv[3] == 'resume:true':
+            stream_title = []
+            highlight_offset = 0
+        else:
+            stream_title = [LOCAL_STRING(30391)]
+            highlight_offset = 1
+        media_state = []
+        content_id = []
+        # combine tv and radio items
+        epg = json_source['media']['epg'][0]['items'] + json_source['media']['epg'][2]['items']
+        for item in epg:
+            xbmc.log(str(item))
+            if item['mediaState'] != 'MEDIA_OFF':
+                # tv and radio items use different variables for home/away
+                if 'mediaFeedType' in item:
+                    media_feed_type = str(item['mediaFeedType'])
+                else:
+                    media_feed_type = str(item['type'])
+                if IN_MARKET != 'Hide' or (media_feed_type != 'IN_MARKET_HOME' and media_feed_type != 'IN_MARKET_AWAY'):
+                    title = media_feed_type.title()
+                    title = title.replace('_', ' ')
+                    if 'mediaFeedType' in item:
+                        title += LOCAL_STRING(30392)
+                    else:
+                        if item['language'] == 'en':
+                            title += LOCAL_STRING(30394)
+                        elif item['language'] == 'es':
+                            title += LOCAL_STRING(30395)
+                        title += LOCAL_STRING(30393)
+                    if 'mediaFeedType' in item and ('HOME' in title.upper() or 'NATIONAL' in title.upper()):
+                        media_state.insert(0, item['mediaState'])
+                        content_id.insert(0, item['contentId'])
+                        stream_title.insert(highlight_offset, title + " (" + item['callLetters'] + ")")
+                    else:
+                        media_state.append(item['mediaState'])
+                        content_id.append(item['contentId'])
+                        stream_title.append(title + " (" + item['callLetters'] + ")")
+
+        # All past games should have highlights
+        if len(stream_title) == 0:
+            dialog = xbmcgui.Dialog()
+            dialog.notification(LOCAL_STRING(30383), LOCAL_STRING(30384), ICON, 5000, False)
+            xbmcplugin.setResolvedUrl(addon_handle, False, xbmcgui.ListItem())
+            sys.exit()
+
+        n = dialog.select(LOCAL_STRING(30390), stream_title)
+        if n == -1:
+            sys.exit()
+        elif n > -1 and stream_title[n] != LOCAL_STRING(30391):
+            # check if selected stream is a radio stream, which can't play with inputstream adaptive
+            if LOCAL_STRING(30393) in stream_title[n]:
+                stream_type = 'audio'
+            selected_content_id = content_id[n-highlight_offset]
+
+    if selected_content_id is not None:
         account = Account()
-        stream_url, headers, broadcast_start = account.get_stream(content_id[n-highlight_offset])
+        stream_url, headers, broadcast_start = account.get_stream(selected_content_id)
         if sys.argv[3] == 'resume:true':
             spoiler = "True"
             if stream_type == 'video':
                 skip_possible = True
-        elif epg[0]['mediaState'] == "MEDIA_ON" and CATCH_UP == 'true' and stream_type == 'video':
+        elif epg[0]['mediaState'] == "MEDIA_ON" and CATCH_UP == 'true' and stream_type == 'video' and from_context_menu == False:
             is_live = True
             start_options = [LOCAL_STRING(30397), LOCAL_STRING(30398), LOCAL_STRING(30399)]
             # add inning start options
@@ -468,7 +486,7 @@ def stream_select(game_pk, spoiler='True'):
             elif p == -1:
                 sys.exit()
         # don't offer to start live radio streams from beginning
-        elif epg[0]['mediaState'] == "MEDIA_ON" and CATCH_UP == 'true' and stream_type == 'audio':
+        elif epg[0]['mediaState'] == "MEDIA_ON" and CATCH_UP == 'true' and stream_type == 'audio' and from_context_menu == False:
             p = dialog.select(LOCAL_STRING(30396), [LOCAL_STRING(30397), LOCAL_STRING(30399)])
             if p == 0:
                 listitem = stream_to_listitem(stream_url, headers, 'True', '1', 'audio')
@@ -476,7 +494,7 @@ def stream_select(game_pk, spoiler='True'):
                 sys.exit()
             elif p == -1:
                 sys.exit()
-        elif stream_type == 'video':
+        elif stream_type == 'video' and from_context_menu == False:
             skip_possible = True
             # For archive games, offer to start at inning if catch up is enabled
             if CATCH_UP == 'true':
@@ -493,16 +511,16 @@ def stream_select(game_pk, spoiler='True'):
                 elif p == -1:
                     sys.exit()
 
-    if skip_possible == True and ASK_TO_SKIP == 'true':
+    if skip_possible == True and ASK_TO_SKIP == 'true' and from_context_menu == False:
         skip_type = dialog.select(LOCAL_STRING(30403), [LOCAL_STRING(30404), LOCAL_STRING(30408), LOCAL_STRING(30405), LOCAL_STRING(30406)])
         if skip_type == -1:
             sys.exit()
 
     if '.m3u8' in stream_url:
-        play_stream(stream_url, headers, spoiler, start, stream_type, skip_type, content_id[n-highlight_offset], game_pk, is_live, start_inning, start_inning_half)
+        play_stream(stream_url, headers, spoiler, start, stream_type, skip_type, selected_content_id, game_pk, is_live, start_inning, start_inning_half)
 
     elif stream_title[n] == LOCAL_STRING(30391):
-        highlight_select_stream(json_source['highlights']['highlights']['items'])
+        highlight_select_stream(json_source['highlights']['highlights']['items'], None, from_context_menu)
 
     else:
         sys.exit()
@@ -590,7 +608,68 @@ def featured_stream_select(featured_video, name):
         xbmc.log('unable to find stream for featured video')
 
 
-def highlight_select_stream(json_source, catchup=None):
+def list_highlights(game_pk):
+    url = API_URL + '/api/v1/game/' + game_pk + '/content'
+    headers = {
+        'User-Agent': UA_ANDROID
+    }
+    r = requests.get(url, headers=headers, verify=VERIFY)
+    json_source = r.json()
+
+    if 'highlights' in json_source and 'highlights' in json_source['highlights'] and 'items' in json_source['highlights']['highlights'] and len(json_source['highlights']['highlights']['items']) > 0:
+        highlights = get_highlights(json_source['highlights']['highlights']['items'])
+        if not highlights:
+            msg = LOCAL_STRING(30383)
+            dialog = xbmcgui.Dialog()
+            dialog.notification(LOCAL_STRING(30391), msg, ICON, 5000, False)
+            xbmcplugin.setResolvedUrl(addon_handle, False, xbmcgui.ListItem())
+            sys.exit()
+
+        # play all
+        liz=xbmcgui.ListItem(LOCAL_STRING(30411))
+        liz.setInfo( type="Video", infoLabels={ "Title": LOCAL_STRING(30411) } )
+        liz.setProperty("IsPlayable", "true")
+        u=sys.argv[0]+"?mode="+str(107)+"&game_pk="+urllib.quote_plus(game_pk)
+        isFolder=False
+
+        xbmcplugin.addDirectoryItem(handle=addon_handle,url=u,listitem=liz,isFolder=isFolder)
+        xbmcplugin.setContent(addon_handle, 'episodes')
+
+        for clip in highlights:
+            liz=xbmcgui.ListItem(clip['title'])
+            liz.setInfo( type="Video", infoLabels={ "Title": clip['title'] } )
+            liz.setArt({'icon': clip['icon'], 'thumb': clip['icon']})
+            liz.setProperty("IsPlayable", "true")
+            u=sys.argv[0]+"?mode="+str(301)+"&featured_video="+urllib.quote_plus(clip['url'])+"&name="+urllib.quote_plus(clip['title'])
+            isFolder=False
+
+            xbmcplugin.addDirectoryItem(handle=addon_handle,url=u,listitem=liz,isFolder=isFolder)
+            xbmcplugin.setContent(addon_handle, 'episodes')
+
+
+def play_all_highlights_for_game(game_pk):
+    url = API_URL + '/api/v1/game/' + game_pk + '/content'
+    headers = {
+        'User-Agent': UA_ANDROID
+    }
+    r = requests.get(url, headers=headers, verify=VERIFY)
+    json_source = r.json()
+
+    if 'highlights' in json_source and 'highlights' in json_source['highlights'] and 'items' in json_source['highlights']['highlights'] and len(json_source['highlights']['highlights']['items']) > 0:
+        highlights = get_highlights(json_source['highlights']['highlights']['items'])
+        playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+        playlist.clear()
+
+        for clip in highlights:
+            listitem = xbmcgui.ListItem(clip['url'])
+            listitem.setArt({'icon': clip['icon'], 'thumb': clip['icon'], 'fanart': FANART})
+            listitem.setInfo(type="Video", infoLabels={"Title": clip['title']})
+            playlist.add(clip['url'], listitem)
+
+        xbmcplugin.setResolvedUrl(handle=addon_handle, succeeded=True, listitem=playlist[0])
+
+
+def highlight_select_stream(json_source, catchup=None, from_context_menu=False):
     highlights = get_highlights(json_source)
     if not highlights and catchup is None:
         msg = LOCAL_STRING(30383)
@@ -599,8 +678,11 @@ def highlight_select_stream(json_source, catchup=None):
         xbmcplugin.setResolvedUrl(addon_handle, False, xbmcgui.ListItem())
         sys.exit()
 
-    highlight_name = ['Play All']
-    highlight_url = ['junk']
+    highlight_name = []
+    highlight_url = []
+    if from_context_menu == False:
+        highlight_name.append(LOCAL_STRING(30411))
+        highlight_url.append('junk')
 
     for clip in highlights:
         highlight_name.append(clip['title'])
