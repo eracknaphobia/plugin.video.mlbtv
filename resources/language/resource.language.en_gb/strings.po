@@ -335,3 +335,11 @@ msgstr ""
 msgctxt "#30411"
 msgid "Play All"
 msgstr ""
+
+msgctxt "#30412"
+msgid "Auto-play live favorite games when starting addon"
+msgstr ""
+
+msgctxt "#30413"
+msgid "See Yesterday's Scores at inning"
+msgstr ""
