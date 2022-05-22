@@ -91,11 +91,11 @@ class RequestHandler(BaseHTTPRequestHandler):
             last_item_index -= 1
             url_line = None
             extinf_line = None
-            while url_line is None or extinf_line is None:
-                if not new_line_array[last_item_index].startswith('#'):
-                    url_line = new_line_array[last_item_index]
-                elif new_line_array[last_item_index].startswith('#EXTINF:'):
+            while extinf_line is None:
+                if new_line_array[last_item_index].startswith('#EXTINF:5'):
                     extinf_line = new_line_array[last_item_index]
+                    url_line = new_line_array[last_item_index+1]
+                    break
                 last_item_index -= 1
             for x in range(0, pad):
                 new_line_array.append(extinf_line)

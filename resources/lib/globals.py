@@ -207,11 +207,12 @@ def get_params():
 def add_stream(name, title, desc, game_pk, icon=None, fanart=None, info=None, video_info=None, audio_info=None, stream_date=None, spoiler='True', suspended=None, start_inning='False'):
     ok=True
     u_params = "&name="+urllib.quote_plus(title)+"&game_pk="+urllib.quote_plus(str(game_pk))+"&stream_date="+urllib.quote_plus(str(stream_date))+"&spoiler="+urllib.quote_plus(str(spoiler))+"&suspended="+urllib.quote_plus(str(suspended))+"&start_inning="+urllib.quote_plus(str(start_inning))+"&description="+urllib.quote_plus(desc)
-    u=sys.argv[0]+"?mode="+str(104)+u_params
-
-    liz=xbmcgui.ListItem(name)
     if icon is None: icon = ICON
     if fanart is None: fanart = FANART
+    art_params = "&icon="+urllib.quote_plus(icon)+"&fanart="+urllib.quote_plus(fanart)
+    u=sys.argv[0]+"?mode="+str(104)+u_params+art_params
+
+    liz=xbmcgui.ListItem(name)
     liz.setArt({'icon': icon, 'thumb': icon, 'fanart': fanart})
     liz.setProperty("IsPlayable", "true")
     liz.setInfo( type="Video", infoLabels={ "Title": title } )
@@ -223,7 +224,6 @@ def add_stream(name, title, desc, game_pk, icon=None, fanart=None, info=None, vi
         liz.addStreamInfo('audio', audio_info)
 
     # add Choose Stream and Highlights as context menu items
-    art_params = "&icon="+urllib.quote_plus(icon)+"&fanart="+urllib.quote_plus(fanart)
     liz.addContextMenuItems([(LOCAL_STRING(30390), 'PlayMedia(plugin://plugin.video.mlbtv/?mode='+str(103)+u_params+art_params+')'), (LOCAL_STRING(30391), 'Container.Update(plugin://plugin.video.mlbtv/?mode='+str(106)+'&name='+urllib.quote_plus(title)+'&game_pk='+urllib.quote_plus(str(game_pk))+art_params+')')])
 
     ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=False)
@@ -418,7 +418,7 @@ def load_cookies():
     return cj
 
 
-def stream_to_listitem(stream_url, headers, description, title, icon, fanart, start='1', stream_type='video'):
+def stream_to_listitem(stream_url, headers, description, title, icon, fanart, start='1', stream_type='video', music_type_unset=False):
     # check if our stream is HLS
     if '.m3u8' in stream_url:
         # if not audio only, check if inputstream.adaptive is present and enabled, depending on Kodi version
@@ -441,14 +441,15 @@ def stream_to_listitem(stream_url, headers, description, title, icon, fanart, st
         listitem.setMimeType("application/x-mpegURL")
     # otherwise, if not HLS, assume it is MP4
     else:
-        listitem = xbmcgui.ListItem(path=stream_url + '|' + headers)
+        listitem = xbmcgui.ListItem(title, path=stream_url + '|' + headers)
         listitem.setMimeType("video/mp4")
 
     if title is not None and description is not None:
-        if stream_type != 'audio':
-            listitem.setInfo( type="Video", infoLabels={ "Title": title, "Plot": description } )
-        else:
+        # don't set Music type for audio selection through Catch Up or context menu, otherwise playback will fail
+        if stream_type == 'audio' and music_type_unset is False:
             listitem.setInfo( type="Music", infoLabels={ "Title": title, "Album": description } )
+        else:
+            listitem.setInfo( type="Video", infoLabels={ "Title": title, "Plot": description } )
 
     if icon is not None and fanart is not None:
         listitem.setArt({'icon': icon, 'thumb': icon, 'fanart': fanart})

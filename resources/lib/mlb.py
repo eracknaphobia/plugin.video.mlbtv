@@ -622,7 +622,7 @@ def stream_select(game_pk, spoiler, suspended, start_inning, description, name, 
                 # catch up
                 if p == 0:
                     # create an item for the video stream
-                    listitem = stream_to_listitem(stream_url, headers, description, icon, fanart)
+                    listitem = stream_to_listitem(stream_url, headers, description, name, icon, fanart)
                     # pass along the highlights and the video stream item to play as a playlist and stop processing here
                     highlight_select_stream(json_source['highlights']['highlights']['items'], catchup=listitem)
                     sys.exit()
@@ -648,7 +648,7 @@ def stream_select(game_pk, spoiler, suspended, start_inning, description, name, 
                 # catch up
                 if p == 0:
                     # create an item for the audio stream
-                    listitem = stream_to_listitem(stream_url, headers, description, icon, fanart, stream_type='audio')
+                    listitem = stream_to_listitem(stream_url, headers, description, name, icon, fanart, stream_type='audio', music_type_unset=True)
                     # pass along the highlights and the audio stream item to play as a playlist and stop processing here
                     highlight_select_stream(json_source['highlights']['highlights']['items'], catchup=listitem)
                     sys.exit()
@@ -690,7 +690,7 @@ def stream_select(game_pk, spoiler, suspended, start_inning, description, name, 
 
         # valid stream url
         if '.m3u8' in stream_url:
-            play_stream(stream_url, headers, description, title=name, icon=icon, fanart=fanart, start=broadcast_start_offset, stream_type=stream_type)
+            play_stream(stream_url, headers, description, title=name, icon=icon, fanart=fanart, start=broadcast_start_offset, stream_type=stream_type, music_type_unset=from_context_menu)
             # start the skip monitor if a skip type or start inning has been requested and we have a broadcast start timestamp
             if (skip_type > 0 or start_inning > 0) and broadcast_start_timestamp is not None:
                 mlbmonitor = MLBMonitor()
@@ -857,16 +857,16 @@ def highlight_select_stream(json_source, catchup=None, from_context_menu=False):
 
     highlight_name = []
     highlight_url = []
-    highlight_blurb = []
+    highlight_description = []
     if from_context_menu is False:
         highlight_name.append(LOCAL_STRING(30411))
         highlight_url.append('blank')
-        highlight_blurb.append(LOCAL_STRING(30411))
+        highlight_description.append(LOCAL_STRING(30411))
 
     for clip in highlights:
         highlight_name.append(clip['title'])
         highlight_url.append(clip['url'])
-        highlight_blurb.append(clip['description'])
+        highlight_description.append(clip['description'])
 
     if catchup is None:
         dialog = xbmcgui.Dialog()
@@ -876,7 +876,7 @@ def highlight_select_stream(json_source, catchup=None, from_context_menu=False):
 
     if a > 0:
         headers = 'User-Agent=' + UA_PC
-        play_stream(highlight_url[a], headers, highlight_blurb[a], highlight_name[a])
+        play_stream(highlight_url[a], headers, highlight_description[a], highlight_name[a])
     elif a == 0:
         playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
         playlist.clear()
@@ -884,7 +884,7 @@ def highlight_select_stream(json_source, catchup=None, from_context_menu=False):
         for clip in highlights:
             listitem = xbmcgui.ListItem(clip['url'])
             listitem.setArt({'icon': clip['icon'], 'thumb': clip['icon'], 'fanart': FANART})
-            listitem.setInfo(type="Video", infoLabels={"Title": clip['title'], "plot": clip["blurb"]})
+            listitem.setInfo(type="Video", infoLabels={"Title": clip['title'], "plot": clip["description"]})
             playlist.add(clip['url'], listitem)
 
         if catchup is not None:
@@ -895,8 +895,8 @@ def highlight_select_stream(json_source, catchup=None, from_context_menu=False):
         sys.exit()
 
 
-def play_stream(stream_url, headers, description, title, icon=None, fanart=None, start='1', stream_type='video'):
-    listitem = stream_to_listitem(stream_url, headers, description, title, icon, fanart, start=start, stream_type=stream_type)
+def play_stream(stream_url, headers, description, title, icon=None, fanart=None, start='1', stream_type='video', music_type_unset=False):
+    listitem = stream_to_listitem(stream_url, headers, description, title, icon, fanart, start=start, stream_type=stream_type, music_type_unset=music_type_unset)
     xbmcplugin.setResolvedUrl(handle=addon_handle, succeeded=True, listitem=listitem)
 
 
