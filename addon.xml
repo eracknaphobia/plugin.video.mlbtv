@@ -29,6 +29,7 @@
             - labels for suspended/resumed games/streams
             - retain icon/fanart/probables through context menu navigation
             - list favorite team's game(s) first
+            - removed unused/unnecessary settings (in market streams and proxy)
         </news>
         <language>en</language>
         <platform>all</platform>

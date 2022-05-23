@@ -40,7 +40,6 @@ OLD_USERNAME = str(settings.getSetting(id="old_username"))
 OLD_PASSWORD = str(settings.getSetting(id="old_password"))
 QUALITY = str(settings.getSetting(id="quality"))
 CDN = str(settings.getSetting(id="cdn"))
-IN_MARKET = str(settings.getSetting(id="in_market"))
 NO_SPOILERS = settings.getSetting(id="no_spoilers")
 FAV_TEAM = str(settings.getSetting(id="fav_team"))
 TEAM_NAMES = settings.getSetting(id="team_names")
@@ -57,13 +56,6 @@ MLB_MONITOR_STARTED = settings.getSetting(id='mlb_monitor_started')
 if MLB_MONITOR_STARTED != '' and not xbmc.getCondVisibility("Player.HasMedia"):
     xbmc.log("MLB Monitor detection resetting due to no stream playing")
     settings.setSetting(id='mlb_monitor_started', value='')
-
-#Proxy Settings
-PROXY_ENABLED = str(settings.getSetting(id='use_proxy'))
-PROXY_SERVER = str(settings.getSetting(id='proxy_server'))
-PROXY_PORT = str(settings.getSetting(id='proxy_port'))
-PROXY_USER = str(settings.getSetting(id='proxy_user'))
-PROXY_PWD = str(settings.getSetting(id='proxy_pwd'))
 
 #Colors
 SCORE_COLOR = 'FF00B7EB'
@@ -373,10 +365,12 @@ def getFavTeamId():
                 'Texas Rangers': '140',
                 'Toronto Blue Jays': '141',
                 'Washington Nationals': '120'}
-    
-    fav_team_id = team_ids[FAV_TEAM]
 
-    return  fav_team_id
+    fav_team_id = None
+    if FAV_TEAM in team_ids:
+        fav_team_id = team_ids[FAV_TEAM]
+
+    return fav_team_id
 
 
 def getAudioVideoInfo():

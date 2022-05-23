@@ -46,9 +46,9 @@ def todays_games(game_day, start_inning='False'):
     favorite_games = []
     remaining_games = []
 
+    fav_team_id = getFavTeamId()
     for game in json_source['dates'][0]['games']:
-        if getFavTeamId() in {str(game['teams']['home']['team']['id']),
-                              str(game['teams']['away']['team']['id'])}:
+        if fav_team_id is not None and fav_team_id in [str(game['teams']['home']['team']['id']), str(game['teams']['away']['team']['id'])]:
             favorite_games.append(game)
         else:
             remaining_games.append(game)
@@ -483,7 +483,7 @@ def stream_select(game_pk, spoiler, suspended, start_inning, description, name, 
         # loop through the streams to determine the best match
         for item in epg:
             # ignore streams that haven't started yet, audio streams (without a mediaFeedType), and in-market streams
-            if item['mediaState'] != 'MEDIA_OFF' and 'mediaFeedType' in item and item['mediaFeedType'] != 'IN_MARKET_HOME' and item['mediaFeedType'] != 'IN_MARKET_AWAY':
+            if item['mediaState'] != 'MEDIA_OFF' and 'mediaFeedType' in item and not item['mediaFeedType'].startswith('IN_'):
                 # check if our favorite team (if defined) is associated with this stream
                 # or if no favorite team match, look for the home or national streams
                 if (FAV_TEAM != 'None' and 'mediaFeedSubType' in item and item['mediaFeedSubType'] == getFavTeamId()) or (selected_content_id is None and 'mediaFeedType' in item and (item['mediaFeedType'] == 'HOME' or item['mediaFeedType'] == 'NATIONAL' )):
@@ -521,72 +521,71 @@ def stream_select(game_pk, spoiler, suspended, start_inning, description, name, 
 
         for item in epg:
             #xbmc.log(str(item))
-            # only display if the stream is available (either live or archive)
-            if item['mediaState'] != 'MEDIA_OFF':
-                # video and audio streams use different fields to indicate home/away
+            
+            # video and audio streams use different fields to indicate home/away
+            if 'mediaFeedType' in item:
+                media_feed_type = str(item['mediaFeedType'])
+            else:
+                media_feed_type = str(item['type'])
+
+            # only display if the stream is available (either live or archive) and not in_market
+            if item['mediaState'] != 'MEDIA_OFF' and not media_feed_type.startswith('IN_'):
+                title = media_feed_type.title()
+                title = title.replace('_', ' ')
+
+                # add TV to video stream
                 if 'mediaFeedType' in item:
-                    media_feed_type = str(item['mediaFeedType'])
+                    title += LOCAL_STRING(30392)
+                # add language to audio stream
                 else:
-                    media_feed_type = str(item['type'])
+                    if item['language'] == 'en':
+                        title += LOCAL_STRING(30394)
+                    elif item['language'] == 'es':
+                        title += LOCAL_STRING(30395)
+                    title += LOCAL_STRING(30393)
+                title = title + " (" + item['callLetters'] + ")"
 
-                # ignore in-market streams if necessary
-                if IN_MARKET != 'Hide' or (media_feed_type != 'IN_MARKET_HOME' and media_feed_type != 'IN_MARKET_AWAY'):
-                    title = media_feed_type.title()
-                    title = title.replace('_', ' ')
+                # modify stream title based on suspension status, if necessary
+                if suspended != 'False':
+                    suspended_label = 'partial'
+                    try:
+                        # if the game hasn't finished, we can simply tell the status from the mediaState
+                        if suspended == 'live' and item['mediaState'] == 'MEDIA_ARCHIVE':
+                            suspended_label = 'Suspended'
+                        elif suspended == 'live':
+                            suspended_label = 'Resumed'
+                        # otherwise if the game is complete, we need to check the airings data
+                        else:
+                            if game_date is None and 'gameDate' in item:
+                                game_date = item['gameDate']
+                            if airings is None and game_date is not None:
+                                airings = get_airings_data(game_pk=game_pk)
+                            if game_date is not None and airings is not None and 'data' in airings and 'Airings' in airings['data']:
+                                for airing in airings['data']['Airings']:
+                                    if airing['contentId'] == item['contentId']:
+                                        # compare the start date of the airing with the provided game_date
+                                        start_date = get_eastern_game_date(parse(airing['startDate']))
+                                        # same day means it is resumed
+                                        if game_date == start_date:
+                                            suspended_label = 'Resumed'
+                                        # different day means it was suspended
+                                        else:
+                                            suspended_label = 'Suspended'
+                                        break
+                    except:
+                        pass
+                    title += ' (' + suspended_label + ')'
 
-                    # add TV to video stream
-                    if 'mediaFeedType' in item:
-                        title += LOCAL_STRING(30392)
-                    # add language to audio stream
-                    else:
-                        if item['language'] == 'en':
-                            title += LOCAL_STRING(30394)
-                        elif item['language'] == 'es':
-                            title += LOCAL_STRING(30395)
-                        title += LOCAL_STRING(30393)
-                    title = title + " (" + item['callLetters'] + ")"
-
-                    # modify stream title based on suspension status, if necessary
-                    if suspended != 'False':
-                        suspended_label = 'partial'
-                        try:
-                            # if the game hasn't finished, we can simply tell the status from the mediaState
-                            if suspended == 'live' and item['mediaState'] == 'MEDIA_ARCHIVE':
-                                suspended_label = 'Suspended'
-                            elif suspended == 'live':
-                                suspended_label = 'Resumed'
-                            # otherwise if the game is complete, we need to check the airings data
-                            else:
-                                if game_date is None and 'gameDate' in item:
-                                    game_date = item['gameDate']
-                                if airings is None and game_date is not None:
-                                    airings = get_airings_data(game_pk=game_pk)
-                                if game_date is not None and airings is not None and 'data' in airings and 'Airings' in airings['data']:
-                                    for airing in airings['data']['Airings']:
-                                        if airing['contentId'] == item['contentId']:
-                                            # compare the start date of the airing with the provided game_date
-                                            start_date = get_eastern_game_date(parse(airing['startDate']))
-                                            # same day means it is resumed
-                                            if game_date == start_date:
-                                                suspended_label = 'Resumed'
-                                            # different day means it was suspended
-                                            else:
-                                                suspended_label = 'Suspended'
-                                            break
-                        except:
-                            pass
-                        title += ' (' + suspended_label + ')'
-
-                    # insert home/national video streams at the top of the list
-                    if 'mediaFeedType' in item and ('HOME' in title.upper() or 'NATIONAL' in title.upper()):
-                        content_id.insert(0, item['contentId'])
-                        media_state.insert(0, item['mediaState'])
-                        stream_title.insert(highlight_offset, title)
-                    # otherwise append other streams to end of list
-                    else:
-                        content_id.append(item['contentId'])
-                        media_state.append(item['mediaState'])
-                        stream_title.append(title)
+                # insert home/national video streams at the top of the list
+                if 'mediaFeedType' in item and ('HOME' in title.upper() or 'NATIONAL' in title.upper()):
+                    content_id.insert(0, item['contentId'])
+                    media_state.insert(0, item['mediaState'])
+                    stream_title.insert(highlight_offset, title)
+                # otherwise append other streams to end of list
+                else:
+                    content_id.append(item['contentId'])
+                    media_state.append(item['mediaState'])
+                    stream_title.append(title)
 
         # if we didn't find any streams, display an error and exit
         if len(stream_title) == 0:
@@ -986,8 +985,10 @@ def live_fav_game():
 
     game_pk = None
 
-    # don't check if we've already flagged today's fav games as complete
-    if auto_play_game_date != game_day:
+    fav_team_id = getFavTeamId()
+
+    # don't check if don't have a fav team id or if we've already flagged today's fav games as complete
+    if fav_team_id is not None and auto_play_game_date != game_day:
         # don't check more often than 5 minute intervals
         auto_play_game_checked = str(settings.getSetting(id='auto_play_game_checked'))
         now = datetime.now()
@@ -997,7 +998,7 @@ def live_fav_game():
             url = API_URL + '/api/v1/schedule'
             url += '?hydrate=game(content(media(epg)))'
             url += '&sportId=1,51'
-            url += '&teamId=' + getFavTeamId()
+            url += '&teamId=' + fav_team_id
             url += '&date=' + game_day
 
             headers = {

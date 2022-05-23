@@ -23,8 +23,6 @@
     <setting id="no_spoilers" type="enum" label="30170" lvalues="30171|30172|30173|30174|30175" />
     <setting id="fav_team" type="labelenum" label="30180" default="None" values="None|Washington Nationals|Toronto Blue Jays|Texas Rangers|Tampa Bay Rays|St. Louis Cardinals|Seattle Mariners|San Francisco Giants|San Diego Padres|Pittsburgh Pirates|Philadelphia Phillies|Oakland Athletics|New York Yankees|New York Mets|Minnesota Twins|Milwaukee Brewers|Miami Marlins|Los Angeles Dodgers|Los Angeles Angels|Kansas City Royals|Houston Astros|Detroit Tigers|Colorado Rockies|Cleveland Guardians|Cincinnati Reds|Chicago White Sox|Chicago Cubs|Boston Red Sox|Baltimore Orioles|Atlanta Braves|Arizona Diamondbacks" />
 
-    <setting id="in_market" type="labelenum" label="30300" default="Show" values="Show|Hide" />
-
     <setting id="team_names" type="select" label="30190" lvalues="30191|30192" default="0" />
     <setting id="time_format" type="select" label="30301" lvalues="30302|30301" default="0" />
     <setting id="auto_select_stream" type="bool" label="30307" default="false" />
@@ -42,14 +40,6 @@
     <setting id="mlb_monitor_started" type="text" label="" default="" visible="false"/>
     <setting id="auto_play_game_date" type="text" label="" default="" visible="false"/>
     <setting id="auto_play_game_checked" type="text" label="" default="" visible="false"/>
-  </category>
-  <!--Proxy-->
-  <category label='30200'>
-    <setting id='use_proxy' type='bool' label='30210' default='false'/>
-    <setting id='proxy_server' type='text' label='30220' default=''/>
-    <setting id='proxy_port' type='number' label='30230' default=''/>
-    <setting id='proxy_user' type='text' label='30240' default=''/>
-    <setting id='proxy_pwd' type='text' label='30250' option='hidden' default=''/>
   </category>
 </settings>
 
