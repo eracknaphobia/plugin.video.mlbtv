@@ -28,6 +28,7 @@
             - hide bottom of 9th / extra innings as spoilers
             - labels for suspended/resumed games/streams
             - retain icon/fanart/probables through context menu navigation
+            - list favorite team's game(s) first
         </news>
         <language>en</language>
         <platform>all</platform>

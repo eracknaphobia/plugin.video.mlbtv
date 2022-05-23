@@ -29,9 +29,6 @@ def todays_games(game_day, start_inning='False'):
 
     addPlaylist(date_display, str(game_day), 900, ICON, FANART)
 
-    if ONLY_FREE_GAMES != 'true':
-        create_big_inning_listitem(game_day)
-
     #url = 'http://gdx.mlb.com/components/game/mlb/' + url_game_day + '/grid_ce.json'
     url = API_URL + '/api/v1/schedule'
     # url += '?hydrate=broadcasts(all),game(content(all)),probablePitcher,linescore,team,flags'
@@ -46,8 +43,27 @@ def todays_games(game_day, start_inning='False'):
     r = requests.get(url,headers=headers, verify=VERIFY)
     json_source = r.json()
 
+    favorite_games = []
+    remaining_games = []
+
+    for game in json_source['dates'][0]['games']:
+        if getFavTeamId() in {str(game['teams']['home']['team']['id']),
+                              str(game['teams']['away']['team']['id'])}:
+            favorite_games.append(game)
+        else:
+            remaining_games.append(game)
+
     try:
-        for game in json_source['dates'][0]['games']:
+        for game in favorite_games:
+            create_game_listitem(game, game_day, start_inning)
+    except:
+        pass
+
+    if ONLY_FREE_GAMES != 'true':
+        create_big_inning_listitem(game_day)
+
+    try:
+        for game in remaining_games:
             create_game_listitem(game, game_day, start_inning)
     except:
         pass
