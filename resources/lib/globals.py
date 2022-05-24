@@ -493,3 +493,15 @@ def calculate_inning_from_index(index):
     if (index % 2) == 0 and ((index+1) % 2) == 1:
         inning_half = 'bottom'
     return inning, inning_half
+
+
+def get_last_name(full_name):
+    last_name = ''
+    try:
+        name_split = full_name.split()
+        last_name = name_split[len(name_split)-1]
+        if last_name.endswith('.'):
+            last_name = name_split[len(name_split)-2] + ' ' + last_name
+    except:
+        pass
+    return last_name

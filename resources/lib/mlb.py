@@ -208,15 +208,25 @@ def create_game_listitem(game, game_day, start_inning):
     stream_date = str(game_day)
 
     desc = ''
+    probables = ' ('
     if 'probablePitcher' in game['teams']['away'] and 'fullName' in game['teams']['away']['probablePitcher']:
         desc += game['teams']['away']['probablePitcher']['fullName']
+        probables += get_last_name(game['teams']['away']['probablePitcher']['fullName'])
     else:
         desc += 'TBD'
+        probables += 'TBD'
     desc += ' vs. '
+    probables += ' vs '
     if 'probablePitcher' in game['teams']['home'] and 'fullName' in game['teams']['home']['probablePitcher']:
         desc += game['teams']['home']['probablePitcher']['fullName']
+        probables += get_last_name(game['teams']['home']['probablePitcher']['fullName'])
     else:
         desc += 'TBD'
+        probables += 'TBD'
+    if probables == ' (TBD vs TBD':
+        probables = ''
+    else:
+        probables = colorString((probables + ')'), FINAL)
     if 'venue' in game and 'name' in game['venue']:
         desc += ', from ' + game['venue']['name']
     if 'description' in game and game['description'] != "":
@@ -273,7 +283,7 @@ def create_game_listitem(game, game_day, start_inning):
     # If set only show free games in the list
     if ONLY_FREE_GAMES == 'true' and not is_free:
         return
-    add_stream(name, title, desc, game_pk, icon, fanart, info, video_info, audio_info, stream_date, spoiler, suspended, start_inning)
+    add_stream((name + probables), title, desc, game_pk, icon, fanart, info, video_info, audio_info, stream_date, spoiler, suspended, start_inning)
 
 
 # fetch a list of featured videos

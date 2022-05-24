@@ -30,6 +30,7 @@
             - retain icon/fanart/probables through context menu navigation
             - list favorite team's game(s) first
             - removed unused/unnecessary settings (in market streams and proxy)
+            - added probable pitchers to game list titles
         </news>
         <language>en</language>
         <platform>all</platform>
