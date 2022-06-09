@@ -315,3 +315,11 @@ msgstr ""
 msgctxt "#30413"
 msgid "See Yesterday's Scores at inning"
 msgstr ""
+
+msgctxt "#30414"
+msgid "Watch in YouTube Add-on"
+msgstr ""
+
+msgctxt "#30415"
+msgid "Zip code (5 digits, for blackout labels)"
+msgstr ""

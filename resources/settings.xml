@@ -5,6 +5,9 @@
     <setting id="username" type="text" label="30140" default=""/>
     <setting id="password" type="text" label="30150" option="hidden" default=""/>
     <setting id="single_team" type="bool" label="30151" default="false"/>
+    <setting id="zip_code" type="number" label="30415" default=""/>
+    <setting id="old_zip_code" type="number" label="" default="" visible="false"/>
+    <setting id="blackout_teams" type="text" label="" default="[]" visible="false"/>
     <setting label="30156" type="action" action="RunPlugin(plugin://plugin.video.mlbtv/?url=junk&amp;mode=400)" option="close" />
     <!--Hidden-->
     <setting id='session_key' type='text' visible="false" default=''/>
