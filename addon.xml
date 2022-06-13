@@ -24,6 +24,8 @@
         <news>
             - optional zip code setting to detect and label blackout streams (does not circumvent blackouts)
             - tweaked skip timings, particularly for non-action pitches and overturned reviews
+            - option to disable video length padding (in case of proxy conflicts)
+            - restored 24-hour time format label, applied it to Big Inning listitem
         </news>
         <language>en</language>
         <platform>all</platform>

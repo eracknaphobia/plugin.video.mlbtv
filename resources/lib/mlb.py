@@ -759,7 +759,7 @@ def stream_select(game_pk, spoiler, suspended, start_inning, blackout, descripti
         if autoplay is True:
             broadcast_start_offset = '-1'
         # if not live and no spoilers and not audio, generate a random number of segments to pad at end of proxy stream url
-        elif is_live is False and spoiler == 'False' and stream_type != 'audio':
+        elif DISABLE_VIDEO_PADDING == 'false' and is_live is False and spoiler == 'False' and stream_type != 'audio':
             pad = random.randint((3600 / SECONDS_PER_SEGMENT), (7200 / SECONDS_PER_SEGMENT))
             headers += '&pad=' + str(pad)
             stream_url = 'http://127.0.0.1:43670/' + stream_url
