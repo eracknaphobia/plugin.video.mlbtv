@@ -48,15 +48,31 @@ def todays_games(game_day, start_inning='False'):
     remaining_games = []
 
     fav_team_id = getFavTeamId()
+    fox_regional_games = False
+    fox_start_time = None
     for game in json_source['dates'][0]['games']:
         if fav_team_id is not None and fav_team_id in [str(game['teams']['home']['team']['id']), str(game['teams']['away']['team']['id'])]:
             favorite_games.append(game)
         else:
             remaining_games.append(game)
 
+        # while looping through games, check if any FOX national games have the same start time, which indicates regional broadcasts
+        game['fox_game'] = False
+        if game['seriesDescription'] == 'Regular Season' and 'content' in game and 'media' in game['content'] and 'epg' in game['content']['media']:
+            for epg in game['content']['media']['epg']:
+                if epg['title'] == 'MLBTV':
+                    for item in epg['items']:
+                        if item['callLetters'] == 'FOX':
+                            game['fox_game'] = True
+                            if fox_start_time is not None and game['gameDate'] == fox_start_time:
+                                fox_regional_games = True
+                            else:
+                                fox_start_time = game['gameDate']
+                    break
+
     try:
         for game in favorite_games:
-            create_game_listitem(game, game_day, start_inning, today)
+            create_game_listitem(game, game_day, start_inning, today, fox_regional_games)
     except:
         pass
 
@@ -65,7 +81,7 @@ def todays_games(game_day, start_inning='False'):
 
     try:
         for game in remaining_games:
-            create_game_listitem(game, game_day, start_inning, today)
+            create_game_listitem(game, game_day, start_inning, today, fox_regional_games)
     except:
         pass
 
@@ -73,7 +89,7 @@ def todays_games(game_day, start_inning='False'):
     addDir('[B]%s >>[/B]' % LOCAL_STRING(30011), 101, NEXT_ICON, FANART, next_day.strftime("%Y-%m-%d"), start_inning)
 
 
-def create_game_listitem(game, game_day, start_inning, today):
+def create_game_listitem(game, game_day, start_inning, today, fox_regional_games):
     #icon = ICON
     icon = 'https://img.mlbstatic.com/mlb-photos/image/upload/ar_167:215,c_crop/fl_relative,l_team:' + str(game['teams']['home']['team']['id']) + ':fill:spot.png,w_1.0,h_1,x_0.5,y_0,fl_no_overflow,e_distort:100p:0:200p:0:200p:100p:0:100p/fl_relative,l_team:' + str(game['teams']['away']['team']['id']) + ':logo:spot:current,w_0.38,x_-0.25,y_-0.16/fl_relative,l_team:' + str(game['teams']['home']['team']['id']) + ':logo:spot:current,w_0.38,x_0.25,y_0.16/w_750/team/' + str(game['teams']['away']['team']['id']) + '/fill/spot.png'
     # http://mlb.mlb.com/mlb/images/devices/ballpark/1920x1080/2681.jpg
@@ -276,17 +292,20 @@ def create_game_listitem(game, game_day, start_inning, today):
     blackout = 'False'
     try:
         if game_day >= today and game_state != 'Postponed':
-            blackout_type, blackout_time = get_blackout_status(game, suspended, scheduled_innings)
+            if game['fox_game'] == True and fox_regional_games == True:
+                desc += '[CR]Regional FOX game'
+            else:
+                blackout_type, blackout_time = get_blackout_status(game, suspended, scheduled_innings)
 
-            if blackout_type != 'False':
-                name = blackoutString(name)
-                desc += '[CR]' + blackout_type + ' video blackout until approx. 90 min. after the game'
-                if blackout_time is None:
-                    blackout = 'True'
-                else:
-                    blackout = blackout_time
-                    blackout_display_time = get_display_time(UTCToLocal(blackout_time))
-                    desc += ' (~' + blackout_display_time + ')'
+                if blackout_type != 'False':
+                    name = blackoutString(name)
+                    desc += '[CR]' + blackout_type + ' video blackout until approx. 90 min. after the game'
+                    if blackout_time is None:
+                        blackout = 'True'
+                    else:
+                        blackout = blackout_time
+                        blackout_display_time = get_display_time(UTCToLocal(blackout_time))
+                        desc += ' (~' + blackout_display_time + ')'
     except:
         pass
 
