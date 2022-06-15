@@ -27,6 +27,7 @@
             - option to disable video length padding (in case of proxy conflicts)
             - restored 24-hour time format label, applied it to Big Inning listitem
             - label regional national games
+            - added additional action play type in skip monitor
         </news>
         <language>en</language>
         <platform>all</platform>
