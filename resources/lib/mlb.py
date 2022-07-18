@@ -49,6 +49,8 @@ def todays_games(game_day, start_inning='False'):
     remaining_games = []
 
     fav_team_id = getFavTeamId()
+    game_changer_start = None
+    game_changer_end = None
     inprogress_exists = False
     blackouts = []
     regional_fox_games_exist = False
@@ -71,8 +73,18 @@ def todays_games(game_day, start_inning='False'):
                 # while looping through today's games, also count in progress, non-blackout games for Game Changer
                 if game['blackout_type'] != 'False':
                     blackouts.append(str(game['gamePk']))
-                elif not inprogress_exists and game['status']['detailedState'] == 'In Progress':
-                    inprogress_exists = True
+                else:
+                    if (game_changer_start is None or game['gameDate'] < game_changer_start) and 'rescheduleDate' not in game:
+                        game_changer_start = game['gameDate']
+                    elif 'rescheduleDate' not in game:
+                        if game['status']['startTimeTBD'] is True:
+                            game_changer_end = parse(game_changer_end) + timedelta(hours=4)
+                            game_changer_end = game_changer_end.strftime("%Y-%m-%dT%H:%M:%SZ")
+                        else:
+                            game_changer_end = game['gameDate']
+
+                    if not inprogress_exists and game['status']['detailedState'] == 'In Progress':
+                        inprogress_exists = True
 
     try:
         for game in favorite_games:
@@ -85,8 +97,8 @@ def todays_games(game_day, start_inning='False'):
         create_big_inning_listitem(game_day)
 
         # if it's today, show the game changer listitem
-        if today == game_day:
-            create_game_changer_listitem(blackouts, inprogress_exists)
+        if today == game_day and game_changer_start is not None and game_changer_end is not None and (len(games) - len(blackouts)) > 1:
+            create_game_changer_listitem(blackouts, inprogress_exists, game_changer_start, game_changer_end)
 
     try:
         for game in remaining_games:
@@ -295,7 +307,7 @@ def create_game_listitem(game, game_day, start_inning, today):
         if game_day >= today and game_state != 'Postponed':
             if 'blackout_type' in game and game['blackout_type'] != 'False':
                 name = blackoutString(name)
-                desc += '[CR]' + game['blackout_type'] + ' video blackout until approx. 90 min. after the game'
+                desc += '[CR]' + game['blackout_type'] + ' video blackout until approx. 2.5 hours after the game'
                 if 'blackout_time' not in game or game['blackout_time'] is None:
                     blackout = 'True'
                 else:
@@ -498,10 +510,18 @@ def create_big_inning_listitem(game_day):
 
 
 # display a Game Changer item within a game list
-def create_game_changer_listitem(blackouts, inprogress_exists):
-    name = LOCAL_STRING(30417)
+def create_game_changer_listitem(blackouts, inprogress_exists, game_changer_start, game_changer_end):
+    display_title = LOCAL_STRING(30417)
+
+    # format the time for display
+    game_time = get_display_time(UTCToLocal(stringToDate(game_changer_start, "%Y-%m-%dT%H:%M:%SZ"))) + ' - ' + get_display_time(UTCToLocal(stringToDate(game_changer_end, "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=4)))
+
     if inprogress_exists:
-        name = LOCAL_STRING(30367) + name
+        display_title = LOCAL_STRING(30367) + LOCAL_STRING(30417)
+        game_time = colorString(game_time, LIVE)
+
+    name = game_time + ' ' + display_title
+
     desc = LOCAL_STRING(30418)
 
     # create the list item
@@ -652,7 +672,7 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
                     title = blackoutString(title)
                     title += ' (blackout until ~'
                     if blackout == 'True':
-                        title += '90 min. after'
+                        title += '2.5 hours after'
                     else:
                         blackout_display_time = get_display_time(UTCToLocal(blackout))
                         title += blackout_display_time
@@ -1016,7 +1036,7 @@ def get_highlights(items):
     highlights = []
     for item in sorted(items, key=lambda x: x['date']):
         for playback in item['playbacks']:
-            if 'hlsCloud' in playback['name']:
+            if 'mp4Avc' in playback['name']:
                 clip_url = playback['url']
                 break
         headline = item['headline']
@@ -1118,7 +1138,7 @@ def get_blackout_status(game, regional_fox_games_exist):
 
     # also calculate a blackout time for non-suspended, non-TBD games
     if blackout_type != 'False' and 'resumeGameDate' not in game and 'resumedFromDate' not in game and game['status']['startTimeTBD'] is False:
-        blackout_wait_minutes = 90
+        blackout_wait_minutes = 150
         if 'scheduled_innings' not in game:
             game['scheduled_innings'] = get_scheduled_innings(game)
         innings = max(game['scheduled_innings'], get_current_inning(game))

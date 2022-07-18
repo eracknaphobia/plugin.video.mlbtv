@@ -1058,7 +1058,7 @@ class MLBMonitor(xbmc.Monitor):
 
         while not self.monitor.abortRequested():
             if refresh_sec != stream_refresh_sec:
-                new_games, new_players = self.get_best_games(date_string, blackouts, monitor_name, players)
+                new_games, new_players = self.get_best_games(date_string, blackouts, monitor_name, players, curr_game)
                 games_buffer.append(new_games)
                 players_buffer.append(new_players)
                 games = games_buffer[0]
@@ -1142,7 +1142,7 @@ class MLBMonitor(xbmc.Monitor):
 
 
     # get active live games ordered by leverage
-    def get_best_games(self, date_string, blackouts, monitor_name, players):
+    def get_best_games(self, date_string, blackouts, monitor_name, players, curr_game):
         url = 'http://gd2.mlb.com/components/game/mlb/year_' + date_string + '/master_scoreboard.json'
         headers = {
             'User-Agent': UA_PC
@@ -1157,70 +1157,98 @@ class MLBMonitor(xbmc.Monitor):
 
         if 'data' in json_source and 'games' in json_source['data'] and 'game' in json_source['data']['games']:
             games = []
-            for game in json_source['data']['games']['game']:
-                teams = game['away_name_abbrev'] + '@' + game['home_name_abbrev']
-                # Game is blacked out
-                game_pk = str(game['game_pk'])
-                if game_pk in blackouts:
-                    omitted_games['blackout'].append(teams)
-                    continue
+            # if we don't have a current game, and nothing is found on loop #1, expand the criteria to include:
+            # 2. challenge/replay review games
+            # 3. pitching change games
+            # 4. inning break games
+            for x in range(1,5):
+                for game in json_source['data']['games']['game']:
+                    teams = game['away_name_abbrev'] + '@' + game['home_name_abbrev']
+                    # Game is blacked out
+                    game_pk = str(game['game_pk'])
+                    if game_pk in blackouts:
+                        omitted_games['blackout'].append(teams)
+                        continue
 
-                game_status = game['status']
+                    game_status = game['status']
 
-                # Game is not active (not started, game over, or in replay review)
-                if game_status['status'] != 'In Progress':
-                    omitted_games['inactive'].append(teams)
-                    continue
+                    # Game is not active (not started, game over, or in challenge/replay review)
+                    if 'inning' not in game_status or 'o' not in game_status or (game_status['status'] != 'In Progress' and (x < 2 or ('challenge' not in game_status['status'].lower() and 'replay' not in game_status['status'].lower()))):
+                        omitted_games['inactive'].append(teams)
+                        continue
 
-                # Game is between innings
-                inning_half = self.convert_inning_half(game_status['inning_state'])
-                outs = int(game_status['o'])
-                if inning_half == 'Middle' or inning_half == 'End' or outs == 3:
-                    omitted_games['break'].append(teams)
-                    continue
+                    inning_half = self.convert_inning_half(game_status['inning_state'])
+                    inning_num = int(game_status['inning'])
+                    outs = int(game_status['o'])
+                    runners_on_base = self.convert_runners_on_base(game['runners_on_base'])
+                    balls = int(game_status['b'])
+                    strikes = int(game_status['s'])
+                    away_score = int(game['linescore']['r']['away'])
+                    home_score = int(game['linescore']['r']['home'])
 
-                pitcher = game['pitcher']['id']
-                new_pitcher = game_pk in players and 'pitcher' in players[game_pk] and players[game_pk]['pitcher'] != pitcher
-                if new_pitcher:
-                    omitted_games['pitching_change'].append(teams)
-                    continue
-
-                balls = int(game_status['b'])
-                strikes = int(game_status['s'])
-                batter = game['batter']['id']
-                new_batter = (balls == 0 and strikes == 0) or balls == 4 or strikes == 3 or (game_pk in players and 'batter' in players[game_pk] and players[game_pk]['batter'] != batter)
-
-                inning_num = int(game_status['inning'])
-                runners_on_base = self.convert_runners_on_base(game['runners_on_base'])
-                away_score = int(game['linescore']['r']['away'])
-                home_score = int(game['linescore']['r']['home'])
-
-                # bump perfect games or no hitters in the 9th inning to the top of the leverage list
-                leverage_adjust = 0
-                if inning_num == 9 and (game_status['is_perfect_game'] == 'Y' or game_status['is_no_hitter'] == 'Y'):
-                    away_hits = int(game['linescore']['h']['away'])
-                    if (away_hits == 0 and inning_half == 'top') or (inning_half == 'bot'):
-                        if game_status['is_perfect_game'] == 'Y':
-                            xbmc.log(monitor_name + ' adjusting ' + teams + ' for perfect game')
-                            leverage_adjust = MAX_LEVERAGE * 2
+                    # Game is between innings
+                    if inning_half == 'Middle' or inning_half == 'End' or outs == 3:
+                        if x < 4:
+                            omitted_games['break'].append(teams)
+                            continue
                         else:
-                            xbmc.log(monitor_name + ' adjusting ' + teams + ' for no hitter')
-                            leverage_adjust = MAX_LEVERAGE
+                            if inning_half == 'Middle':
+                                # check for finished games
+                                if inning_number == 9 and away_score < home_score:
+                                    omitted_games['break'].append(teams)
+                                    continue
+                                inning_half = 'bot'
+                            elif inning_half == 'End':
+                                # check for finished games
+                                if inning_number == 9 and away_score != home_score:
+                                    omitted_games['break'].append(teams)
+                                    continue
+                                inning_half = 'top'
+                                inning_number += 1
+                            outs = 0
+                            runners_on_base = '_ _ _'
+                            balls = 0
+                            strikes = 0
 
-                state = self.GameState(
-                    teams,
-                    away_score,
-                    home_score,
-                    inning_half,
-                    inning_num,
-                    outs,
-                    runners_on_base,
-                    game_pk,
-                    new_batter,
-                    leverage_adjust)
-                games.append(state)
+                    pitcher = game['pitcher']['id']
+                    new_pitcher = game_pk in players and 'pitcher' in players[game_pk] and players[game_pk]['pitcher'] != pitcher
+                    if x < 3 and new_pitcher:
+                        omitted_games['pitching_change'].append(teams)
+                        continue
 
-                new_players[game_pk] = {'batter': batter, 'pitcher': pitcher}
+                    batter = game['batter']['id']
+                    new_batter = (balls == 0 and strikes == 0) or balls == 4 or strikes == 3 or (game_pk in players and 'batter' in players[game_pk] and players[game_pk]['batter'] != batter)
+
+                    # bump perfect games or no hitters in the 9th inning to the top of the leverage list
+                    leverage_adjust = 0
+                    if inning_num == 9 and (game_status['is_perfect_game'] == 'Y' or game_status['is_no_hitter'] == 'Y'):
+                        away_hits = int(game['linescore']['h']['away'])
+                        if (away_hits == 0 and inning_half == 'top') or (inning_half == 'bot'):
+                            if game_status['is_perfect_game'] == 'Y':
+                                xbmc.log(monitor_name + ' adjusting ' + teams + ' for perfect game')
+                                leverage_adjust = MAX_LEVERAGE * 2
+                            else:
+                                xbmc.log(monitor_name + ' adjusting ' + teams + ' for no hitter')
+                                leverage_adjust = MAX_LEVERAGE
+
+                    state = self.GameState(
+                        teams,
+                        away_score,
+                        home_score,
+                        inning_half,
+                        inning_num,
+                        outs,
+                        runners_on_base,
+                        game_pk,
+                        new_batter,
+                        leverage_adjust)
+                    games.append(state)
+
+                    new_players[game_pk] = {'batter': batter, 'pitcher': pitcher}
+
+                # exit loop if we have a current game or we've found new games above
+                if curr_game is not None or len(games) > 0:
+                    break
 
             xbmc.log(monitor_name + ' omitted games ' + json.dumps(omitted_games))
 
