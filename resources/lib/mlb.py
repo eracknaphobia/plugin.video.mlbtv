@@ -883,9 +883,15 @@ def featured_stream_select(featured_video, name, description):
     # otherwise assume it is a video title (used to call Big Inning from the schedule)
     else:
         xbmc.log('must search for video url with title')
-        video_list = get_video_list()
+        video_list = get_video_list('https://dapi.mlbinfra.com/v2/content/en-us/vsmcontents/mlb-tv-welcome-center-big-inning-show')
+        eventList = None
         if 'items' in video_list:
-            for item in video_list['items']:
+            eventList = video_list['items']
+        elif 'references' in video_list and 'video' in video_list['references']:
+            eventList = video_list['references']['video']
+
+        if eventList is not None:
+            for item in eventList:
                 #xbmc.log(str(item))
                 # live Big Inning title should start with LIVE and contain Big Inning
                 if (featured_video == (LOCAL_STRING(30367) + LOCAL_STRING(30368)) and item['title'].startswith('LIVE') and 'Big Inning' in item['title']) or featured_video == item['title']:
