@@ -955,6 +955,28 @@ class MLBMonitor(xbmc.Monitor):
                     if start_inning_half == 'bottom' and final_inning_half == 'top':
                         start_inning_half = final_inning_half
 
+            # if skip_type is for specific batter or pitcher, present another dialog to select player name
+            player = None
+            if skip_type == 3:
+                xbmc.log(monitor_name + ' prompting for player selection')
+                batters = []
+                pitchers = []
+                for play in json_source['liveData']['plays']['allPlays']:
+                    current_inning = play['about']['inning']
+                    current_inning_half = play['about']['halfInning']
+                    # make sure we're past our start inning
+                    if current_inning > start_inning or (current_inning == start_inning and (current_inning_half == start_inning_half or current_inning_half == 'bottom')):
+                        if 'matchup' in play:
+                            if 'batter' in play['matchup'] and 'fullName' in play['matchup']['batter'] and play['matchup']['batter']['fullName'] not in batters:
+                                batters.append(play['matchup']['batter']['fullName'])
+                            if 'pitcher' in play['matchup'] and 'fullName' in play['matchup']['pitcher'] and play['matchup']['pitcher']['fullName'] not in pitchers and play['matchup']['pitcher']['fullName'] not in batters:
+                                pitchers.append(play['matchup']['pitcher']['fullName'])
+                players = batters + pitchers
+                dialog = xbmcgui.Dialog()
+                player_index = dialog.select(LOCAL_STRING(30422), players)
+                player = players[player_index]
+                xbmc.log(monitor_name + ' specified player ' + player)
+
             # loop through all plays
             for play in json_source['liveData']['plays']['allPlays']:
                 # exit loop after found inning, if not skipping any breaks
@@ -964,6 +986,13 @@ class MLBMonitor(xbmc.Monitor):
                 current_inning_half = play['about']['halfInning']
                 # make sure we're past our start inning
                 if current_inning > start_inning or (current_inning == start_inning and (current_inning_half == start_inning_half or current_inning_half == 'bottom')):
+                    # check for player, if specified
+                    if skip_type == 3:
+                        if 'matchup' in play and (('batter' in play['matchup'] and 'fullName' in play['matchup']['batter'] and player == play['matchup']['batter']['fullName']) or ('pitcher' in play['matchup'] and 'fullName' in play['matchup']['pitcher'] and player == play['matchup']['pitcher']['fullName'])):
+                            xbmc.log(monitor_name + ' found specified player ' + player)
+                        else:
+                            continue
+
                     # loop through events within each play
                     for index, playEvent in enumerate(play['playEvents']):
                         # default to longer action end padding
@@ -980,11 +1009,11 @@ class MLBMonitor(xbmc.Monitor):
                             if index < (len(play['playEvents'])-1) and ('details' not in playEvent or 'event' not in playEvent['details'] or not any(substring in playEvent['details']['event'] for substring in self.ACTION_TYPES)):
                                 event_end_padding = self.PITCH_END_PADDING
                             action_index = None
-                            # skip type 1 (breaks) and 2 (idle time) will look at all plays with an endTime
-                            if skip_type <= 2 and 'endTime' in playEvent:
+                            # skip type 1 (breaks) and 2 & 3 (idle time) will look at all plays with an endTime
+                            if skip_type <= 3 and 'endTime' in playEvent:
                                 action_index = index
-                            elif skip_type == 3:
-                                # skip type 3 excludes non-action pitches (events that aren't last in the at-bat and don't fall under action types)
+                            elif skip_type == 4:
+                                # skip type 4 excludes non-action pitches (events that aren't last in the at-bat and don't fall under action types)
                                 if index < (len(play['playEvents'])-1) and ('details' not in playEvent or 'event' not in playEvent['details'] or not any(substring in playEvent['details']['event'] for substring in self.ACTION_TYPES)):
                                     continue
                                 else:

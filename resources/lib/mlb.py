@@ -820,7 +820,7 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
         # show automatic skip dialog, if possible, enabled, and we're not looking to autoplay
         if skip_possible is True and ASK_TO_SKIP == 'true' and autoplay is False:
             # automatic skip dialog with options to skip nothing, breaks, breaks + idle time, breaks + idle time + non-action pitches
-            skip_type = dialog.select(LOCAL_STRING(30403), [LOCAL_STRING(30404), LOCAL_STRING(30408), LOCAL_STRING(30405), LOCAL_STRING(30406)])
+            skip_type = dialog.select(LOCAL_STRING(30403), [LOCAL_STRING(30404), LOCAL_STRING(30408), LOCAL_STRING(30405), LOCAL_STRING(30421), LOCAL_STRING(30406)])
             # cancel will exit
             if skip_type == -1:
                 sys.exit()
