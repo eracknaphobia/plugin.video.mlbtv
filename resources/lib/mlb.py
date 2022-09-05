@@ -76,9 +76,9 @@ def todays_games(game_day, start_inning='False'):
                 else:
                     if (game_changer_start is None or game['gameDate'] < game_changer_start) and 'rescheduleDate' not in game:
                         game_changer_start = game['gameDate']
-                    elif 'rescheduleDate' not in game:
+                    elif game_changer_start is not None and 'rescheduleDate' not in game:
                         if game['status']['startTimeTBD'] is True:
-                            game_changer_end = parse(game_changer_end) + timedelta(hours=4)
+                            game_changer_end = parse(game_changer_start) + timedelta(hours=4)
                             game_changer_end = game_changer_end.strftime("%Y-%m-%dT%H:%M:%SZ")
                         else:
                             game_changer_end = game['gameDate']

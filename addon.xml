@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.mlbtv" name="MLB.TV®" version="2022.8.30" provider-name="eracknaphobia">
+<addon id="plugin.video.mlbtv" name="MLB.TV®" version="2022.9.4" provider-name="eracknaphobia">
     <requires>
         <import addon="xbmc.python" version="2.25.0"/>
         <import addon="script.module.pytz" />
@@ -23,6 +23,7 @@
         <disclaimer lang="en_GB">Requires an MLB.tv account</disclaimer>
         <news>
             - auto skip: added option to skip to specific batter or pitcher
+            - fixed game changer display time bug for start time TBD games
         </news>
         <language>en</language>
         <platform>all</platform>
