@@ -356,4 +356,12 @@ msgctxt "#30423"
 msgid "Skip commercial breaks"
 msgstr ""
 
+msgctxt "#30424"
+msgid "Skip adjust start (seconds)"
+msgstr ""
+
+msgctxt "#30425"
+msgid "Skip adjust end (seconds)"
+msgstr ""
+
 

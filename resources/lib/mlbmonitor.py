@@ -951,6 +951,10 @@ class MLBMonitor(xbmc.Monitor):
 
         json_source = self.get_gameday_data(game_pk, monitor_name)
 
+        settings = xbmcaddon.Addon(id='plugin.video.mlbtv')
+        skip_adjust_start = int(settings.getSetting(id="skip_adjust_start"))
+        skip_adjust_end = int(settings.getSetting(id="skip_adjust_end"))
+
         # calculate total skip time (for fun)
         total_skip_time = 0
 
@@ -1026,7 +1030,7 @@ class MLBMonitor(xbmc.Monitor):
                                 if 'event' in playEvent['details'] and playEvent['details']['event'] in self.BREAK_TYPES:
                                     continue
                                 else:
-                                    break_end = (parse(playEvent['startTime']) - broadcast_start_timestamp).total_seconds() + event_start_padding
+                                    break_end = (parse(playEvent['startTime']) - broadcast_start_timestamp).total_seconds() + event_start_padding + skip_adjust_start
                                     xbmc.log(monitor_name + ' finishing initial inning skip at ' + str(break_end))
                                     skip_markers.append([break_start, break_end])
                                     total_skip_time += break_end - break_start
@@ -1077,7 +1081,7 @@ class MLBMonitor(xbmc.Monitor):
                         if 'event' in playEvent['details'] and playEvent['details']['event'] in self.BREAK_TYPES:
                             # if we're in the process of skipping all breaks, treat the first break type we find as another inning break
                             if skip_type == 2 and previous_inning > 0:
-                                break_start = (parse(playEvent['startTime']) - broadcast_start_timestamp).total_seconds() + self.EVENT_END_PADDING
+                                break_start = (parse(playEvent['startTime']) - broadcast_start_timestamp).total_seconds() + self.EVENT_END_PADDING + skip_adjust_end
                                 previous_inning = 0
                             continue
                         else:
@@ -1098,7 +1102,7 @@ class MLBMonitor(xbmc.Monitor):
                             if action_index is None:
                                 continue
                             else:
-                                break_end = (parse(play['playEvents'][action_index]['startTime']) - broadcast_start_timestamp).total_seconds() + event_start_padding
+                                break_end = (parse(play['playEvents'][action_index]['startTime']) - broadcast_start_timestamp).total_seconds() + event_start_padding + skip_adjust_start
 
                                 # attempt to fix erroneous timestamps, like NYY-SEA 2022-08-09, bottom 11
                                 if break_end < break_start:
@@ -1123,7 +1127,7 @@ class MLBMonitor(xbmc.Monitor):
                                     # exit loop after found inning, if not skipping breaks
                                     if skip_type == 0:
                                         break
-                                break_start = (parse(play['playEvents'][action_index]['endTime']) - broadcast_start_timestamp).total_seconds() + self.EVENT_END_PADDING
+                                break_start = (parse(play['playEvents'][action_index]['endTime']) - broadcast_start_timestamp).total_seconds() + self.EVENT_END_PADDING + skip_adjust_end
                                 # add extra padding for overturned review plays
                                 if 'reviewDetails' in play:
                                     isOverturned = play['reviewDetails']['isOverturned']
