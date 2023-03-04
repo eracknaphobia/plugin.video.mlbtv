@@ -624,13 +624,13 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
         airings = None
         game_date = None
 
-        # if not live, if suspended, or if live and not resuming, add audio streams to the video streams
-        if len(json_source['media']['epg']) >= 3 and 'items' in json_source['media']['epg'][2] and (epg[0]['mediaState'] != "MEDIA_ON" or suspended != 'False' or (epg[0]['mediaState'] == "MEDIA_ON" and sys.argv[3] != 'resume:true')):
+        # if no video, not live, if suspended, or if live and not resuming, add audio streams to the video streams
+        if len(json_source['media']['epg']) >= 3 and 'items' in json_source['media']['epg'][2] and (len(epg) == 0 or (epg[0]['mediaState'] != "MEDIA_ON" or suspended != 'False' or (epg[0]['mediaState'] == "MEDIA_ON" and sys.argv[3] != 'resume:true'))):
             epg += json_source['media']['epg'][2]['items']
 
         for item in epg:
             #xbmc.log(str(item))
-            
+
             # video and audio streams use different fields to indicate home/away
             if 'mediaFeedType' in item:
                 media_feed_type = str(item['mediaFeedType'])
