@@ -24,6 +24,7 @@
         <news>
             - fixed bug on stream select for games without video
             - fixed data source for game changer
+            - use full team names for non-MLB teams
         </news>
         <language>en</language>
         <platform>all</platform>

@@ -135,6 +135,12 @@ def create_game_listitem(game, game_day, start_inning, today):
         away_team = game['teams']['away']['team']['abbreviation']
         home_team = game['teams']['home']['team']['abbreviation']
 
+    # Use full team name for non-MLB teams
+    if game['teams']['away']['team']['sport']['name'] != 'Major League Baseball':
+        away_team = game['teams']['away']['team']['name']
+    if game['teams']['home']['team']['sport']['name'] != 'Major League Baseball':
+        home_team = game['teams']['home']['team']['name']
+
     title = away_team + ' at ' + home_team
 
     is_free = False
