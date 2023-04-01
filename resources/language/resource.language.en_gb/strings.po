@@ -364,4 +364,12 @@ msgctxt "#30425"
 msgid "Skip adjust end (seconds)"
 msgstr ""
 
+msgctxt "#30426"
+msgid "Minor League Games"
+msgstr ""
+
+msgctxt "#30427"
+msgid "Include favorite team's affiliates"
+msgstr ""
+
 

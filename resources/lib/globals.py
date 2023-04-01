@@ -44,6 +44,7 @@ CDN = str(settings.getSetting(id="cdn"))
 NO_SPOILERS = settings.getSetting(id="no_spoilers")
 DISABLE_VIDEO_PADDING = str(settings.getSetting(id='disable_video_padding'))
 FAV_TEAM = str(settings.getSetting(id="fav_team"))
+INCLUDE_FAV_AFFILIATES = str(settings.getSetting(id='include_fav_affiliates'))
 TEAM_NAMES = settings.getSetting(id="team_names")
 TIME_FORMAT = settings.getSetting(id="time_format")
 SINGLE_TEAM = str(settings.getSetting(id='single_team'))
@@ -99,7 +100,13 @@ VERIFY = True
 
 SECONDS_PER_SEGMENT = 5
 
-def find(source,start_str,end_str):    
+MLB_ID = '1'
+MILB_IDS = '11,12,13,14,16'
+MLB_TEAM_IDS = '108,109,110,111,112,113,114,115,116,117,118,119,120,121,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,158'
+
+AFFILIATE_TEAM_IDS = { 'Arizona Diamondbacks': '2310,419,516,5368', 'Atlanta Braves': '430,431,432,478', 'Baltimore Orioles': '418,568,488,548', 'Boston Red Sox': '414,428,533,546', 'Chicago Cubs': '521,553,451,550', 'Chicago White Sox': '247,580,487,494', 'Cincinnati Reds': '416,450,459,498', 'Cleveland Guardians': '402,437,445,481', 'Colorado Rockies': '259,342,538,486', 'Detroit Tigers': '106,570,582,512', 'Houston Astros': '3712,573,482,5434', 'Kansas City Royals': '3705,1350,541,565', 'Los Angeles Angels': '401,559,561,460', 'Los Angeles Dodgers': '238,260,526,456', 'Miami Marlins': '4124,564,554,479', 'Milwaukee Brewers': '249,556,572,5015', 'Minnesota Twins': '3898,492,509,1960', 'New York Mets': '552,453,505,507', 'New York Yankees': '531,587,1956,537', 'Oakland Athletics': '237,400,524,499', 'Philadelpia Phillies': '1410,427,522,566', 'Pittsburg Pirates': '3390,452,477,484', 'San Diego Padres': '103,584,510,4904', 'San Francisco Giants': '3410,105,461,476', 'Seattle Mariners': '403,515,529,574', 'St. Louis Cardinals': '235,279,440,443', 'Tampa Bay Rays': '233,234,421,2498', 'Texas Rangers': '102,540,448,485', 'Toronto Blue Jays': '422,424,435,463', 'Washington Nationals': '436,426,534,547' }
+
+def find(source,start_str,end_str):
     start = source.find(start_str)
     end = source.find(end_str,start+len(start_str))
 
@@ -204,13 +211,18 @@ def get_params():
     return param
 
 
-def add_stream(name, title, desc, game_pk, icon=None, fanart=None, info=None, video_info=None, audio_info=None, stream_date=None, spoiler='True', suspended=None, start_inning='False', blackout='False'):
+def add_stream(name, title, desc, game_pk, icon=None, fanart=None, info=None, video_info=None, audio_info=None, stream_date=None, spoiler='True', suspended=None, start_inning='False', blackout='False', milb=None):
     ok=True
-    u_params = "&name="+urllib.quote_plus(title)+"&game_pk="+urllib.quote_plus(str(game_pk))+"&stream_date="+urllib.quote_plus(str(stream_date))+"&spoiler="+urllib.quote_plus(str(spoiler))+"&suspended="+urllib.quote_plus(str(suspended))+"&start_inning="+urllib.quote_plus(str(start_inning))+"&description="+urllib.quote_plus(desc)+"&blackout="+urllib.quote_plus(str(blackout))
-    if icon is None: icon = ICON
-    if fanart is None: fanart = FANART
-    art_params = "&icon="+urllib.quote_plus(icon)+"&fanart="+urllib.quote_plus(fanart)
-    u=sys.argv[0]+"?mode="+str(104)+u_params+art_params
+
+    if milb is not None:
+        u_params = "&featured_video="+urllib.quote_plus("https://dai.tv.milb.com/api/v2/playback-info/games/"+str(game_pk)+"/contents/14862/products/milb-carousel")+"&name="+urllib.quote_plus(title)+"&description="+urllib.quote_plus(desc)
+        u=sys.argv[0]+"?mode="+str(301)+u_params
+    else:
+        u_params = "&name="+urllib.quote_plus(title)+"&game_pk="+urllib.quote_plus(str(game_pk))+"&stream_date="+urllib.quote_plus(str(stream_date))+"&spoiler="+urllib.quote_plus(str(spoiler))+"&suspended="+urllib.quote_plus(str(suspended))+"&start_inning="+urllib.quote_plus(str(start_inning))+"&description="+urllib.quote_plus(desc)+"&blackout="+urllib.quote_plus(str(blackout))
+        if icon is None: icon = ICON
+        if fanart is None: fanart = FANART
+        art_params = "&icon="+urllib.quote_plus(icon)+"&fanart="+urllib.quote_plus(fanart)
+        u=sys.argv[0]+"?mode="+str(104)+u_params+art_params
 
     liz=xbmcgui.ListItem(name)
     liz.setArt({'icon': icon, 'thumb': icon, 'fanart': fanart})
@@ -224,7 +236,8 @@ def add_stream(name, title, desc, game_pk, icon=None, fanart=None, info=None, vi
         liz.addStreamInfo('audio', audio_info)
 
     # add Choose Stream and Highlights as context menu items
-    liz.addContextMenuItems([(LOCAL_STRING(30390), 'PlayMedia(plugin://plugin.video.mlbtv/?mode='+str(103)+u_params+art_params+')'), (LOCAL_STRING(30391), 'Container.Update(plugin://plugin.video.mlbtv/?mode='+str(106)+'&name='+urllib.quote_plus(title)+'&game_pk='+urllib.quote_plus(str(game_pk))+art_params+')')])
+    if milb is None:
+        liz.addContextMenuItems([(LOCAL_STRING(30390), 'PlayMedia(plugin://plugin.video.mlbtv/?mode='+str(103)+u_params+art_params+')'), (LOCAL_STRING(30391), 'Container.Update(plugin://plugin.video.mlbtv/?mode='+str(106)+'&name='+urllib.quote_plus(title)+'&game_pk='+urllib.quote_plus(str(game_pk))+art_params+')')])
 
     ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=False)
     xbmcplugin.setContent(addon_handle, 'episodes')
@@ -259,10 +272,10 @@ def addLink(name,url,title,icon,info=None,video_info=None,audio_info=None,fanart
     return ok
 
 
-def addDir(name,mode,icon,fanart=None,game_day=None,start_inning='False'):
+def addDir(name,mode,icon,fanart=None,game_day=None,start_inning='False',sport=MLB_ID):
     ok=True
 
-    u_params="&name="+urllib.quote_plus(name)+"&icon="+urllib.quote_plus(icon)+'&start_inning='+urllib.quote_plus(str(start_inning))
+    u_params="&name="+urllib.quote_plus(name)+"&icon="+urllib.quote_plus(icon)+'&start_inning='+urllib.quote_plus(str(start_inning))+'&sport='+urllib.quote_plus(str(sport))
     if game_day is not None:
         u_params = u_params+"&game_day="+urllib.quote_plus(game_day)
     u=sys.argv[0]+"?mode="+str(mode)+u_params
