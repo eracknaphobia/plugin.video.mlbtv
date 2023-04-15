@@ -32,7 +32,7 @@ def todays_games(game_day, start_inning='False', sport=MLB_ID):
     #url = 'http://gdx.mlb.com/components/game/mlb/' + url_game_day + '/grid_ce.json'
     url = API_URL + '/api/v1/schedule'
     # url += '?hydrate=broadcasts(all),game(content(all)),probablePitcher,linescore,team,flags'
-    url += '?hydrate=game(content(media(epg))),probablePitcher,linescore,team,flags,gameInfo'
+    url += '?hydrate=broadcasts(all),game(content(media(epg))),probablePitcher,linescore,team,flags,gameInfo'
     # 51 is international (i.e. World Baseball Classic) but they aren't streamed in the normal way
     #url += '&sportId=1,51'
     url += '&sportId=' + sport
@@ -131,6 +131,16 @@ def create_game_listitem(game, game_day, start_inning, today):
     level_abbr = ''
     # MiLB titles and graphics
     if game['teams']['home']['team']['sport']['id'] != 1:
+        # Skip MiLB games without any broadcast
+        milb_broadcast = None
+        if 'broadcasts' in game:
+            for broadcast in game['broadcasts']:
+                if broadcast['name'] == 'MiLB.TV':
+                    milb_broadcast = broadcast
+                    break
+        if milb_broadcast is None:
+            return
+
         milb = 'True'
 
         level_abbr = game['teams']['home']['team']['sport']['name']
@@ -364,6 +374,16 @@ def create_game_listitem(game, game_day, start_inning, today):
 
     if game['scheduled_innings'] != 9:
         desc += '[CR]' + str(game['scheduled_innings']) + '-inning game'
+
+    # Display TV broadcast info
+    broadcast_list = []
+    if 'broadcasts' in game:
+        for broadcast in game['broadcasts']:
+            # ignore non-TV and duplicate broadcasts
+            if broadcast['type'] == 'TV' and broadcast['name'] not in broadcast_list:
+                broadcast_list.append(broadcast['name'])
+    if len(broadcast_list) > 0:
+        desc += '[CR]' + ", ".join(broadcast_list)
 
     # Check local/national blackout status
     blackout = 'False'
@@ -1236,17 +1256,27 @@ def get_airings_data(content_id=None, game_pk=None):
 def get_blackout_status(game, regional_fox_games_exist):
     blackout_type = 'False'
     blackout_time = None
-    national_blackout = re.match('^[0-9]{5}$', ZIP_CODE)
+    usa_blackout = re.match('^[0-9]{5}$', ZIP_CODE) and COUNTRY == 'USA'
 
+    # Check if "national" broadcast
     if 'content' in game and 'media' in game['content'] and 'epg' in game['content']['media'] and len(game['content']['media']['epg']) > 0 and 'items' in game['content']['media']['epg'][0] and len(game['content']['media']['epg'][0]['items']) > 0 and 'mediaFeedType' in game['content']['media']['epg'][0]['items'][0] and game['content']['media']['epg'][0]['items'][0]['mediaFeedType'] == 'NATIONAL':
+        # Make sure it's not a regional FOX broadcast
         if (game['content']['media']['epg'][0]['items'][0]['callLetters'] != 'FOX') or (game['content']['media']['epg'][0]['items'][0]['callLetters'] == 'FOX' and regional_fox_games_exist == False):
-            if game['seriesDescription'] != 'Spring Training' and game['seriesDescription'] != 'Regular Season':
-                blackout_type = 'International'
-            elif national_blackout:
+            # International blackouts according to https://www.mlb.com/live-stream-games/help-center/blackouts-available-games
+            # Apple TV+ games are blacked out everywhere
+            # ESPN Sunday Night games are blacked out in a list of countries
+            if game['content']['media']['epg'][0]['items'][0]['callLetters'] == 'Apple TV+':
+                blackout_type = 'Full International'
+            elif game['content']['media']['epg'][0]['items'][0]['callLetters'] == 'ESPN' and parse(game['gameDate']).weekday() == 6 and COUNTRY in ESPN_SUNDAY_NIGHT_BLACKOUT_COUNTRIES:
+                blackout_type = 'Partial International'
+            # USA national blackouts
+            elif usa_blackout:
                 blackout_type = 'National'
 
-    if national_blackout and blackout_type == 'False' and game['seriesDescription'] != 'Spring Training' and (game['teams']['away']['team']['abbreviation'] in BLACKOUT_TEAMS or game['teams']['home']['team']['abbreviation'] in BLACKOUT_TEAMS):
-        blackout_type = 'Local'
+    # Check local blackouts
+    if game['teams']['away']['team']['abbreviation'] in BLACKOUT_TEAMS or game['teams']['home']['team']['abbreviation'] in BLACKOUT_TEAMS:
+        if blackout_type == 'False' and game['seriesDescription'] != 'Spring Training':
+            blackout_type = 'Local'
 
     # also calculate a blackout time for non-suspended, non-TBD games
     if blackout_type != 'False' and 'resumeGameDate' not in game and 'resumedFromDate' not in game and game['status']['startTimeTBD'] is False:

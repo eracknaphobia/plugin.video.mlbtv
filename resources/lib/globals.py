@@ -101,10 +101,12 @@ VERIFY = True
 SECONDS_PER_SEGMENT = 5
 
 MLB_ID = '1'
-MILB_IDS = '11,12,13,14,16'
-MLB_TEAM_IDS = '108,109,110,111,112,113,114,115,116,117,118,119,120,121,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,158'
+MILB_IDS = '11,12,13,14'
+MLB_TEAM_IDS = '108,109,110,111,112,113,114,115,116,117,118,119,120,121,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,158,159,160'
 
-AFFILIATE_TEAM_IDS = { 'Arizona Diamondbacks': '2310,419,516,5368', 'Atlanta Braves': '430,431,432,478', 'Baltimore Orioles': '418,568,488,548', 'Boston Red Sox': '414,428,533,546', 'Chicago Cubs': '521,553,451,550', 'Chicago White Sox': '247,580,487,494', 'Cincinnati Reds': '416,450,459,498', 'Cleveland Guardians': '402,437,445,481', 'Colorado Rockies': '259,342,538,486', 'Detroit Tigers': '106,570,582,512', 'Houston Astros': '3712,573,482,5434', 'Kansas City Royals': '3705,1350,541,565', 'Los Angeles Angels': '401,559,561,460', 'Los Angeles Dodgers': '238,260,526,456', 'Miami Marlins': '4124,564,554,479', 'Milwaukee Brewers': '249,556,572,5015', 'Minnesota Twins': '3898,492,509,1960', 'New York Mets': '552,453,505,507', 'New York Yankees': '531,587,1956,537', 'Oakland Athletics': '237,400,524,499', 'Philadelpia Phillies': '1410,427,522,566', 'Pittsburg Pirates': '3390,452,477,484', 'San Diego Padres': '103,584,510,4904', 'San Francisco Giants': '3410,105,461,476', 'Seattle Mariners': '403,515,529,574', 'St. Louis Cardinals': '235,279,440,443', 'Tampa Bay Rays': '233,234,421,2498', 'Texas Rangers': '102,540,448,485', 'Toronto Blue Jays': '422,424,435,463', 'Washington Nationals': '436,426,534,547' }
+AFFILIATE_TEAM_IDS = {"Los Angeles Angels":"401,559,460,561","Arizona Diamondbacks":"419,516,2310,5368","Baltimore Orioles":"418,568,548,488","Boston Red Sox":"428,414,533,546","Chicago Cubs":"521,451,550,553","Cincinnati Reds":"450,459,498,416","Cleveland Guardians":"445,402,437,481","Colorado Rockies":"259,486,342,538","Detroit Tigers":"512,570,582,106","Houston Astros":"482,5434,573,3712","Kansas City Royals":"1350,3705,541,565","Los Angeles Dodgers":"260,238,456,526","Washington Nationals":"436,534,547,426","New York Mets":"453,507,552,505","Oakland Athletics":"237,499,400,524","Pittsburgh Pirates":"3390,484,452,477","San Diego Padres":"103,510,584,4904","Seattle Mariners":"403,515,529,574","San Francisco Giants":"105,461,476,3410","St. Louis Cardinals":"279,235,440,443","Tampa Bay Rays":"2498,233,234,421","Texas Rangers":"102,485,540,448","Toronto Blue Jays":"424,435,463,422","Minnesota Twins":"492,509,1960,3898","Philadelphia Phillies":"427,522,1410,566","Atlanta Braves":"430,432,478,431","Chicago White Sox":"247,580,487,494","Miami Marlins":"479,564,554,4124","New York Yankees":"1956,587,531,537","Milwaukee Brewers":"249,572,556,5015"}
+
+ESPN_SUNDAY_NIGHT_BLACKOUT_COUNTRIES = ["Angola", "Anguilla", "Antigua and Barbuda", "Argentina", "Aruba", "Australia", "Bahamas", "Barbados", "Belize", "Belize", "Benin", "Bermuda", "Bolivia", "Bonaire", "Botswana", "Brazil", "British Virgin Islands", "Burkina Faso", "Burundi", "Cameroon", "Cape Verde", "Cayman Islands", "Central African Republic", "Chad", "Chile", "Colombia", "Comoros", "Cook Islands", "Costa Rica", "Cote d'Ivoire", "Curacao", "Democratic Republic of the Congo", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "El Salvador", "England", "Equatorial Guinea", "Eritrea", "Eswatini", "Ethiopia", "Falkland Islands", "Falkland Islands", "Fiji", "French Guiana", "French Guiana", "French Polynesia", "Gabon", "Ghana", "Grenada", "Guadeloupe", "Guatemala", "Guinea", "Guinea Bissau", "Guyana", "Guyana", "Haiti", "Honduras", "Ireland", "Jamaica", "Kenya", "Kiribati", "Lesotho", "Liberia", "Madagascar", "Malawi", "Mali", "Marshall Islands", "Martinique", "Mayotte", "Mexico", "Micronesia", "Montserrat", "Mozambique", "Namibia", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "Niue", "Northern Ireland", "Palau Islands", "Panama", "Paraguay", "Peru", "Republic of Ireland", "Reunion", "Rwanda", "Saba", "Saint Maarten", "Samoa", "Sao Tome & Principe", "Scotland", "Senegal", "Seychelles", "Sierra Leone", "Solomon Islands", "Somalia", "South Africa", "St. Barthelemy", "St. Eustatius", "St. Kitts and Nevis", "St. Lucia", "St. Martin", "St. Vincent and the Grenadines", "Sudan", "Surinam", "Suriname", "Tahiti", "Tanzania & Zanzibar", "The Gambia", "The Republic of Congo", "Togo", "Tokelau", "Tonga", "Trinidad and Tobago", "Turks and Caicos Islands", "Tuvalu", "Uganda", "Uruguay", "Venezuela", "Wales", "Zambia", "Zimbabwe"]
 
 def find(source,start_str,end_str):
     start = source.find(start_str)
@@ -504,7 +506,7 @@ def get_last_name(full_name):
 # get the teams blacked out based on zip code
 def get_blackout_teams(zip_code):
     xbmc.log('Resetting blackout teams')
-    blackout_teams = []
+    found_blackout_teams = []
     try:
         if re.match('^[0-9]{5}$', zip_code):
             xbmc.log('Fetching new blackout teams')
@@ -514,21 +516,30 @@ def get_blackout_teams(zip_code):
                 'Origin': 'https://www.mlb.com',
                 'Referer': 'https://www.mlb.com/'
             }
-            r = requests.get(url, headers=headers, verify=VERIFY)
+            # set verify to False here to avoid a Python request error "unable to get local issuer certificate"
+            r = requests.get(url, headers=headers, verify=False)
             json_source = r.json()
             if 'teams' in json_source:
-                blackout_teams = json_source['teams']
+                found_blackout_teams = json_source['teams']
     except:
         pass
 
-    return blackout_teams
+    return found_blackout_teams
 
-
+COUNTRY = str(settings.getSetting(id='country'))
+OLD_COUNTRY = str(settings.getSetting(id='old_country'))
 ZIP_CODE = str(settings.getSetting(id='zip_code'))
 OLD_ZIP_CODE = str(settings.getSetting(id='old_zip_code'))
-if ZIP_CODE != OLD_ZIP_CODE:
-    settings.setSetting(id='old_zip_code', value=ZIP_CODE)
-    BLACKOUT_TEAMS = get_blackout_teams(ZIP_CODE)
-    settings.setSetting(id='blackout_teams', value=json.dumps(BLACKOUT_TEAMS))
+BLACKOUT_TEAMS = json.loads(str(settings.getSetting(id='blackout_teams')))
+if COUNTRY == 'Canada':
+    BLACKOUT_TEAMS = ['TOR']
+elif COUNTRY == 'USA':
+    if ZIP_CODE != OLD_ZIP_CODE or COUNTRY != OLD_COUNTRY:
+        BLACKOUT_TEAMS = get_blackout_teams(ZIP_CODE)
 else:
-    BLACKOUT_TEAMS = json.loads(str(settings.getSetting(id='blackout_teams')))
+    BLACKOUT_TEAMS = []
+
+settings.setSetting(id='blackout_teams', value=json.dumps(BLACKOUT_TEAMS))
+settings.setSetting(id='old_zip_code', value=ZIP_CODE)
+settings.setSetting(id='old_country', value=COUNTRY)
+
