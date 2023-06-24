@@ -24,6 +24,7 @@
         <news>
             - fix for proxied streams ending early when not using Inputstream Adaptive
             - fix for Always Ask stream quality when not using Inputstream Adaptive
+            - fix username/password prompt labels
         </news>
         <language>en</language>
         <platform>all</platform>

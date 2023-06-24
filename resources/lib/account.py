@@ -37,12 +37,12 @@ class Account:
         # Check if username and password are provided
         if self.username == '':
             dialog = xbmcgui.Dialog()
-            self.username = dialog.input(LOCAL_STRING(30240), type=xbmcgui.INPUT_ALPHANUM)
+            self.username = dialog.input(LOCAL_STRING(30140), type=xbmcgui.INPUT_ALPHANUM)
             self.addon.setSetting(id='username', value=self.username)
 
         if self.password == '':
             dialog = xbmcgui.Dialog()
-            self.password = dialog.input(LOCAL_STRING(30250), type=xbmcgui.INPUT_ALPHANUM,
+            self.password = dialog.input(LOCAL_STRING(30150), type=xbmcgui.INPUT_ALPHANUM,
                                     option=xbmcgui.ALPHANUM_HIDE_INPUT)
             self.addon.setSetting(id='password', value=self.password)
 
