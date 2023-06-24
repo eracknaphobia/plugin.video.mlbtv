@@ -22,11 +22,8 @@
         </description>
         <disclaimer lang="en_GB">Requires an MLB.tv account</disclaimer>
         <news>
-            - added affiliate and level menus for finding MiLB (minor league) games
-            - fixed play all recaps / condensed games behavior when clicking on date
-            - start at inning / automatic skip for minor league games
-            - show only in-game highlights for play all highlights or catch up
             - fix for proxied streams ending early when not using Inputstream Adaptive
+            - fix for Always Ask stream quality when not using Inputstream Adaptive
         </news>
         <language>en</language>
         <platform>all</platform>
