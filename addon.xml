@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.mlbtv" name="MLB.TV®" version="2023.6.6+matrix.1" provider-name="eracknaphobia">
+<addon id="plugin.video.mlbtv" name="MLB.TV®" version="2023.6.23+matrix.1" provider-name="eracknaphobia">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.pytz" />
@@ -26,6 +26,7 @@
             - fixed play all recaps / condensed games behavior when clicking on date
             - start at inning / automatic skip for minor league games
             - show only in-game highlights for play all highlights or catch up
+            - potential fix for proxied streams ending early
         </news>
         <language>en</language>
         <platform>all</platform>
