@@ -32,7 +32,7 @@ URI_END_DELIMETER = '"'
 KEY_TEXT = '-KEY:METHOD=AES-128'
 ENDLIST_TEXT = '#EXT-X-ENDLIST'
 REMOVE_IN_HEADERS = ['upgrade', 'host', 'pad', 'alternate_english', 'alternate_spanish']
-REMOVE_OUT_HEADERS = ['date', 'server', 'transfer-encoding', 'keep-alive', 'connection', 'content-length', 'content-md5', 'access-control-allow-credentials', 'content-encoding']
+REMOVE_OUT_HEADERS = ['date', 'server', 'transfer-encoding', 'keep-alive', 'connection', 'content-length', 'content-range', 'content-md5', 'access-control-allow-credentials', 'content-encoding']
 
 class RequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
