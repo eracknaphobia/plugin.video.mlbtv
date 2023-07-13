@@ -28,6 +28,7 @@
             - shorter estimated game lengths
             - improved recap detection
             - tweaked fox/national/all-star blackout detection
+            - removed potential for double-proxied stream
         </news>
         <language>en</language>
         <platform>all</platform>

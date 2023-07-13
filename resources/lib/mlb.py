@@ -965,11 +965,12 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
 
         # add alternate audio tracks, if necessary
         if DISABLE_VIDEO_PADDING == 'false' and (alternate_english is not None or alternate_spanish is not None):
-            stream_url = 'http://127.0.0.1:43670/' + stream_url
             if alternate_english is not None:
                 headers += '&alternate_english=' + urllib.quote_plus(alternate_english)
             if alternate_spanish is not None:
                 headers += '&alternate_spanish=' + urllib.quote_plus(alternate_spanish)
+            if not stream_url.startswith('http://127.0.0.1:43670/'):
+                stream_url = 'http://127.0.0.1:43670/' + stream_url
 
         # valid stream url
         if '.m3u8' in stream_url:
