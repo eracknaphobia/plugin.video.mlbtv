@@ -42,7 +42,9 @@ OLD_PASSWORD = str(settings.getSetting(id="old_password"))
 QUALITY = str(settings.getSetting(id="quality"))
 CDN = str(settings.getSetting(id="cdn"))
 NO_SPOILERS = settings.getSetting(id="no_spoilers")
+HIDE_SCORES_TICKER = str(settings.getSetting(id='hide_scores_ticker'))
 DISABLE_VIDEO_PADDING = str(settings.getSetting(id='disable_video_padding'))
+DISABLE_CLOSED_CAPTIONS = str(settings.getSetting(id='disable_closed_captions'))
 FAV_TEAM = str(settings.getSetting(id="fav_team"))
 INCLUDE_FAV_AFFILIATES = str(settings.getSetting(id='include_fav_affiliates'))
 TEAM_NAMES = settings.getSetting(id="team_names")
@@ -82,6 +84,7 @@ ICON = os.path.join(ROOTDIR,"icon.png")
 FANART = os.path.join(ROOTDIR,"fanart.jpg")
 PREV_ICON = os.path.join(ROOTDIR,"icon.png")
 NEXT_ICON = os.path.join(ROOTDIR,"icon.png")
+BLACK_IMAGE = os.path.join(ROOTDIR, "resources", "img", "black.png")
 
 if SINGLE_TEAM == 'true':
     MASTER_FILE_TYPE = 'master_wired.m3u8'

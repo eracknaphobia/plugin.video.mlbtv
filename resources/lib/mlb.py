@@ -631,7 +631,7 @@ def create_game_changer_listitem(blackouts, inprogress_exists, game_changer_star
     xbmcplugin.setContent(addon_handle, 'episodes')
 
 
-def stream_select(game_pk, spoiler='True', suspended='False', start_inning='False', blackout='False', description=None, name=None, icon=None, fanart=None, from_context_menu=False, autoplay=False):
+def stream_select(game_pk, spoiler='True', suspended='False', start_inning='False', blackout='False', description=None, name=None, icon=None, fanart=None, from_context_menu=False, autoplay=False, overlay_check='False', gamechanger='False'):
     # fetch the epg content using the game_pk
     url = API_URL + '/api/v1/game/' + game_pk + '/content'
     headers = {
@@ -645,6 +645,7 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
     # define some default variables
     selected_content_id = None
     selected_media_state = None
+    selected_call_letters = None
     selected_media_type = None
     stream_url = ''
     broadcast_start_offset = '1' # offset to pass to inputstream adaptive
@@ -681,6 +682,7 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
                     if item['mediaState'] == 'MEDIA_ON':
                         selected_content_id = item['contentId']
                         selected_media_state = item['mediaState']
+                        selected_call_letters = item['callLetters']
                         if 'mediaFeedType' in item:
                             selected_media_type = item['mediaFeedType']
                         # once we've found a fav team live stream, we don't need to search any further
@@ -690,8 +692,16 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
                     elif item['mediaState'] == 'MEDIA_ARCHIVE' and selected_content_id is None:
                         selected_content_id = item['contentId']
                         selected_media_state = item['mediaState']
+                        selected_call_letters = item['callLetters']
                         if 'mediaFeedType' in item:
                             selected_media_type = item['mediaFeedType']
+
+    # if coming from the game changer, just return a flag to indicate whether we need to start an overlay
+    if overlay_check == 'True':
+        if HIDE_SCORES_TICKER == 'true' and stream_type == 'video' and selected_call_letters.startswith('BS'):
+            return True
+        else:
+            return False
 
     # loop through the streams to count video broadcasts (for determining whether we need alternate audio)
     broadcast_count = 0
@@ -707,6 +717,7 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
         highlight_offset = 1
         content_id = []
         media_state = []
+        call_letters = []
         media_type = []
         # if using Kodi's default resume ability, we'll omit highlights from our stream selection prompt
         if sys.argv[3] == 'resume:true':
@@ -793,12 +804,14 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
                 if 'mediaFeedType' in item and ('HOME' in title.upper() or 'NATIONAL' in title.upper()):
                     content_id.insert(0, item['contentId'])
                     media_state.insert(0, item['mediaState'])
+                    call_letters.insert(0, item['callLetters'])
                     media_type.insert(0, media_feed_type)
                     stream_title.insert(highlight_offset, title)
                 # otherwise append other streams to end of list
                 else:
                     content_id.append(item['contentId'])
                     media_state.append(item['mediaState'])
+                    call_letters.append(item['callLetters'])
                     media_type.append(media_feed_type)
                     stream_title.append(title)
 
@@ -806,6 +819,7 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
                 if 'youtube' in item and 'videoId' in item['youtube']:
                     content_id.insert(0, item['youtube']['videoId'])
                     media_state.insert(0, item['mediaState'])
+                    call_letters.insert(0, item['callLetters'])
                     media_type.insert(0, media_feed_type)
                     stream_title.insert(highlight_offset, LOCAL_STRING(30414))
 
@@ -832,6 +846,7 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
             else:
                 selected_content_id = content_id[n-highlight_offset]
                 selected_media_state = media_state[n-highlight_offset]
+                selected_call_letters = call_letters[n-highlight_offset]
                 selected_media_type = media_type[n-highlight_offset]
         # cancel will exit
         elif n == -1:
@@ -959,11 +974,31 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
         # valid stream url
         if '.m3u8' in stream_url:
             play_stream(stream_url, headers, description, title=name, icon=icon, fanart=fanart, start=broadcast_start_offset, stream_type=stream_type, music_type_unset=from_context_menu)
-            # start the skip monitor if a skip type or start inning has been requested and we have a broadcast start timestamp
-            if (skip_type > 0 or start_inning > 0) and broadcast_start_timestamp is not None:
+
+            # start the monitor if a skip type or start inning has been requested and we have a broadcast start timestamp
+            # or if an overlay is required (overlay enabled for a Bally video stream)
+            # or if we want to disable captions
+            if gamechanger == 'False' and stream_type == 'video' and (((skip_type > 0 or start_inning > 0) and broadcast_start_timestamp is not None) or (HIDE_SCORES_TICKER == 'true' and selected_call_letters.startswith('BS')) or DISABLE_CLOSED_CAPTIONS == 'true'):
                 from .mlbmonitor import MLBMonitor
                 mlbmonitor = MLBMonitor()
-                mlbmonitor.skip_monitor(skip_type, game_pk, broadcast_start_timestamp, skip_adjust, stream_url, is_live, start_inning, start_inning_half)
+
+                # wait for stream start to be detected before proceeding
+                if mlbmonitor.wait_for_stream(game_pk) is True:
+
+                    if (HIDE_SCORES_TICKER == 'true' and selected_call_letters.startswith('BS')) or DISABLE_CLOSED_CAPTIONS == 'true':
+                        # wait an extra second
+                        xbmc.sleep(1000)
+
+                        if HIDE_SCORES_TICKER == 'true' and selected_call_letters.startswith('BS'):
+                            mlbmonitor.start_overlay(game_pk)
+
+                        if DISABLE_CLOSED_CAPTIONS == 'true':
+                            mlbmonitor.stop_captions(game_pk)
+
+                    # call the game monitor for skips and/or to stop the overlay
+                    if ((skip_type > 0 or start_inning > 0) and broadcast_start_timestamp is not None) or (HIDE_SCORES_TICKER == 'true' and selected_call_letters.startswith('BS')):
+                        mlbmonitor.game_monitor(skip_type, game_pk, broadcast_start_timestamp, skip_adjust, stream_url, is_live, start_inning, start_inning_half)
+
         # otherwise exit
         else:
             sys.exit()
@@ -1136,7 +1171,7 @@ def featured_stream_select(featured_video, name, description, start_inning=None,
         if game_pk is not None and (skip_type > 0 or start_inning > 0) and broadcast_start_timestamp is not None:
             from .mlbmonitor import MLBMonitor
             mlbmonitor = MLBMonitor()
-            mlbmonitor.skip_monitor(skip_type, game_pk, broadcast_start_timestamp, skip_adjust, video_stream_url, is_live, start_inning, start_inning_half)
+            mlbmonitor.game_monitor(skip_type, game_pk, broadcast_start_timestamp, skip_adjust, video_stream_url, is_live, start_inning, start_inning_half)
     else:
         xbmc.log('unable to find stream for featured video')
 
