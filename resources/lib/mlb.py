@@ -611,7 +611,7 @@ def create_game_changer_listitem(blackouts, inprogress_exists, game_changer_star
     display_title = LOCAL_STRING(30417)
 
     # format the time for display
-    game_time = get_display_time(UTCToLocal(stringToDate(game_changer_start, "%Y-%m-%dT%H:%M:%SZ"))) + ' - ' + get_display_time(UTCToLocal(stringToDate(game_changer_end, "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=4)))
+    game_time = get_display_time(UTCToLocal(stringToDate(game_changer_start, "%Y-%m-%dT%H:%M:%SZ"))) + ' - ' + get_display_time(UTCToLocal(stringToDate(game_changer_end, "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=3) + timedelta(minutes=30)))
 
     if inprogress_exists:
         display_title = LOCAL_STRING(30367) + LOCAL_STRING(30417)
@@ -1433,8 +1433,8 @@ def get_blackout_status(game, regional_fox_games_exist):
         if 'scheduled_innings' not in game:
             game['scheduled_innings'] = get_scheduled_innings(game)
         innings = max(game['scheduled_innings'], get_current_inning(game))
-        # avg 9 inning game was 3:11 in 2021, or 21.22 minutes per inning
-        gameDurationMinutes = 21.22 * innings
+        # avg 9 inning game is 2:40 in 2023, or 17.78 minutes per inning
+        gameDurationMinutes = 17.78 * innings
         # default to assuming the scheduled game time is the first pitch time
         firstPitch = parse(game['gameDate'])
         if 'gameInfo' in game:
