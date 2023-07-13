@@ -72,6 +72,7 @@ def todays_games(game_day, start_inning='False', sport=MLB_ID, teams='None'):
     remaining_games = []
 
     fav_team_id = getFavTeamId()
+    game_changer_starts = []
     game_changer_start = None
     game_changer_end = None
     inprogress_exists = False
@@ -93,21 +94,20 @@ def todays_games(game_day, start_inning='False', sport=MLB_ID, teams='None'):
         if game_day >= today:
             game['blackout_type'], game['blackout_time'] = get_blackout_status(game, regional_fox_games_exist)
             if game_day == today:
-                # while looping through today's games, also count in progress, non-blackout games for Game Changer
+                # while looping through today's games, also count in progress, non-blackout MLB games for Game Changer
                 if game['blackout_type'] != 'False':
                     blackouts.append(str(game['gamePk']))
                 else:
-                    if (game_changer_start is None or game['gameDate'] < game_changer_start) and 'rescheduleDate' not in game:
-                        game_changer_start = game['gameDate']
-                    elif game_changer_start is not None and 'rescheduleDate' not in game:
-                        if game['status']['startTimeTBD'] is True:
-                            game_changer_end = parse(game_changer_start) + timedelta(hours=4)
-                            game_changer_end = game_changer_end.strftime("%Y-%m-%dT%H:%M:%SZ")
-                        else:
-                            game_changer_end = game['gameDate']
+                    if game['teams']['home']['team']['sport']['id'] == 1 and 'rescheduleDate' not in game:
+                        game_changer_starts.append(game['gameDate'])
 
                     if not inprogress_exists and game['status']['detailedState'] == 'In Progress':
                         inprogress_exists = True
+
+    # use second game and second-to-last game for game changer display times
+    if len(game_changer_starts) > 1:
+        game_changer_start = game_changer_starts[1]
+        game_changer_end = game_changer_starts[len(game_changer_starts) - 2]
 
     try:
         for game in favorite_games:
