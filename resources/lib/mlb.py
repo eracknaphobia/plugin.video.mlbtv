@@ -1353,8 +1353,8 @@ def playAllHighlights(stream_date):
             if 'highlights' in game['content']:
                 for item in game['content']['highlights']['highlights']['items']:
                     try:
-                        title = item['headline']
-                        if (n == 0 and 'ighlights' in title and ' vs' in title) or (n == 1 and title.startswith('Condensed ')):
+                        title = item['headline'].strip().lower()
+                        if (n == 0 and (' vs ' in title or ' vs. ' in title or ' versus ' in title or ' at ' in title or '@' in title) and (title.endswith(' highlights') or title.endswith(' recap'))) or (n == 1 and title.includes('condensed')):
                             for playback in item['playbacks']:
                                 if 'hlsCloud' in playback['name']:
                                     clip_url = playback['url']
@@ -1362,8 +1362,8 @@ def playAllHighlights(stream_date):
                             listitem = xbmcgui.ListItem(clip_url)
                             icon = item['image']['cuts'][0]['src']
                             listitem.setArt({'icon': icon, 'thumb': icon, 'fanart': fanart})
-                            listitem.setInfo(type="Video", infoLabels={"Title": title})
-                            xbmc.log('adding recap to playlist : ' + title)
+                            listitem.setInfo(type="Video", infoLabels={"Title": item['headline']})
+                            xbmc.log('adding recap to playlist : ' + item['headline'])
                             playlist.add(clip_url, listitem)
                             break
                     except:
