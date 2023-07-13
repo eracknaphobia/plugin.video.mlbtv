@@ -27,6 +27,7 @@
             - fix gamechanger start/end time display
             - shorter estimated game lengths
             - improved recap detection
+            - tweaked fox/national/all-star blackout detection
         </news>
         <language>en</language>
         <platform>all</platform>

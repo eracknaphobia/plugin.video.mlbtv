@@ -1408,7 +1408,7 @@ def get_blackout_status(game, regional_fox_games_exist):
     usa_blackout = re.match('^[0-9]{5}$', ZIP_CODE) and COUNTRY == 'USA'
 
     # Check if "national" broadcast
-    if 'content' in game and 'media' in game['content'] and 'epg' in game['content']['media'] and len(game['content']['media']['epg']) > 0 and 'items' in game['content']['media']['epg'][0] and len(game['content']['media']['epg'][0]['items']) > 0 and 'mediaFeedType' in game['content']['media']['epg'][0]['items'][0] and game['content']['media']['epg'][0]['items'][0]['mediaFeedType'] == 'NATIONAL':
+    if 'content' in game and 'media' in game['content'] and 'epg' in game['content']['media'] and len(game['content']['media']['epg']) > 0 and 'items' in game['content']['media']['epg'][0] and len(game['content']['media']['epg'][0]['items']) > 0 and 'mediaFeedType' in game['content']['media']['epg'][0]['items'][0] and ((game['content']['media']['epg'][0]['items'][0]['mediaFeedType'] == 'NATIONAL') or check_pay_tv(game['content']['media']['epg'][0]['items'])):
         # Make sure it's not a regional FOX broadcast
         if (game['content']['media']['epg'][0]['items'][0]['callLetters'] != 'FOX') or (game['content']['media']['epg'][0]['items'][0]['callLetters'] == 'FOX' and regional_fox_games_exist == False):
             # International blackouts according to https://www.mlb.com/live-stream-games/help-center/blackouts-available-games
@@ -1458,7 +1458,7 @@ def check_regional_fox_games(games):
     fox_start_time = None
     regional_fox_games_exist = False
     for game in games:
-        if game['seriesDescription'] == 'Regular Season' and 'content' in game and 'media' in game['content'] and 'epg' in game['content']['media']:
+        if 'content' in game and 'media' in game['content'] and 'epg' in game['content']['media']:
             for epg in game['content']['media']['epg']:
                 if epg['title'] == 'MLBTV':
                     for item in epg['items']:
@@ -1470,6 +1470,15 @@ def check_regional_fox_games(games):
                     break
 
     return regional_fox_games_exist
+
+
+# check if any broadcast requires pay TV credentials
+def check_pay_tv(items):
+    for item in items:
+        if ('abcAuthRequired' in item and item['abcAuthRequired'] is True) or ('espnAuthRequired' in item and item['espnAuthRequired'] is True) or ('espn2AuthRequired' in item and item['espn2AuthRequired'] is True) or ('foxAuthRequired' in item and item['foxAuthRequired'] is True) or ('fs1AuthRequired' in item and item['fs1AuthRequired'] is True) or ('mlbnAuthRequired' in item and item['mlbnAuthRequired'] is True) or ('tbsAuthRequired' in item and item['tbsAuthRequired'] is True):
+            return True
+
+    return False
 
 
 def get_scheduled_innings(game):
