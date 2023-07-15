@@ -104,11 +104,6 @@ def todays_games(game_day, start_inning='False', sport=MLB_ID, teams='None'):
                     if not inprogress_exists and game['status']['detailedState'] == 'In Progress':
                         inprogress_exists = True
 
-    # use second game and second-to-last game for game changer display times
-    if len(game_changer_starts) > 1:
-        game_changer_start = game_changer_starts[1]
-        game_changer_end = game_changer_starts[len(game_changer_starts) - 2]
-
     try:
         for game in favorite_games:
             create_game_listitem(game, game_day, start_inning, today)
@@ -122,8 +117,12 @@ def todays_games(game_day, start_inning='False', sport=MLB_ID, teams='None'):
         if today <= game_day and len(games) > 0 and games[0]['seriesDescription'] == 'Regular Season':
             create_big_inning_listitem(game_day)
 
-        # if it's today, show the game changer listitem
-        if today == game_day and game_changer_start is not None and game_changer_end is not None and (len(games) - len(blackouts)) > 1:
+        # if it's today and there's more than one non-blackout MLB game, show the game changer listitem
+        if today == game_day and len(game_changer_starts) > 1:
+            # use second game and second-to-last game for game changer display times
+            game_changer_starts.sort()
+            game_changer_start = game_changer_starts[1]
+            game_changer_end = game_changer_starts[len(game_changer_starts) - 2]
             create_game_changer_listitem(blackouts, inprogress_exists, game_changer_start, game_changer_end)
 
     try:
