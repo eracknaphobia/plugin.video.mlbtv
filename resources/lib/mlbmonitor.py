@@ -837,6 +837,12 @@ class MLBMonitor(xbmc.Monitor):
             xbmc.log("MLB Monitor from " + self.mlb_monitor_started + " closing due to another monitor starting on " + new_mlb_monitor_started)
             self.mlb_monitor_started = ''
 
+    def get_playing_file(self, player):
+        try:
+            return player.getPlayingFile()
+        except:
+            return ''
+
     def wait_for_stream(self, game_pk):
         monitor_name = 'Wait for stream monitor for ' + game_pk
         self.stream_started = False
@@ -849,11 +855,10 @@ class MLBMonitor(xbmc.Monitor):
             if self.monitor.waitForAbort(1):
                 xbmc.log(monitor_name + " aborting")
                 break
-            elif xbmc.getCondVisibility("Player.HasMedia") and self.mlb_monitor_file != player.getPlayingFile():
+            elif xbmc.getCondVisibility("Player.HasMedia") and self.mlb_monitor_file != self.get_playing_file(player):
                 xbmc.log(monitor_name + ' detected stream start')
                 self.stream_started = True
-                player = xbmc.Player()
-                self.mlb_monitor_file = player.getPlayingFile()
+                self.mlb_monitor_file = self.get_playing_file(player)
                 # just for fun, we can log our stream duration, to compare it against skip time detected
                 try:
                     total_stream_time = player.getTotalTime()
@@ -955,7 +960,7 @@ class MLBMonitor(xbmc.Monitor):
                 elif len(skip_markers) == 0:
                     xbmc.log(monitor_name + " closing due to no more skip markers")
                     break
-                elif self.stream_started == True and (not xbmc.getCondVisibility("Player.HasMedia") or (self.mlb_monitor_file == '') or (self.mlb_monitor_file != player.getPlayingFile())):
+                elif self.stream_started == True and (not xbmc.getCondVisibility("Player.HasMedia") or (self.mlb_monitor_file != self.get_playing_file(player))):
                     xbmc.log(monitor_name + " closing due to stream stopped or changed")
                     self.stop_overlay(monitor_name)
                     break
@@ -994,7 +999,7 @@ class MLBMonitor(xbmc.Monitor):
                 if self.monitor.waitForAbort(1):
                     xbmc.log(monitor_name + " overlay aborting")
                     break
-                elif self.stream_started == True and (not xbmc.getCondVisibility("Player.HasMedia") or (self.mlb_monitor_file == '') or (self.mlb_monitor_file != player.getPlayingFile())):
+                elif self.stream_started == True and (not xbmc.getCondVisibility("Player.HasMedia") or (self.mlb_monitor_file != self.get_playing_file(player))):
                     xbmc.log(monitor_name + " overlay closing due to stream stopped or changed")
                     break
                 elif self.mlb_monitor_started == '':
@@ -1331,7 +1336,7 @@ class MLBMonitor(xbmc.Monitor):
                             # next line helps avoid a crash per https://github.com/xbmc/xbmc/issues/14838#issuecomment-750289254
                             xbmc.executebuiltin('Dialog.Close(all,true)')
                             try:
-                                self.mlb_monitor_file = player.getPlayingFile()
+                                self.mlb_monitor_file = self.get_playing_file(player)
                             except:
                                 pass
                             #xbmc.Player().play('plugin://plugin.video.mlbtv/?mode=102&game_pk='+game['state'].game_pk+u_params)
@@ -1358,7 +1363,7 @@ class MLBMonitor(xbmc.Monitor):
             if self.monitor.waitForAbort(refresh_sec):
                 xbmc.log(monitor_name + " aborting")
                 break
-            elif self.stream_started == True and (not xbmc.getCondVisibility("Player.HasMedia") or (self.mlb_monitor_file == '') or (self.mlb_monitor_file != player.getPlayingFile()) or (player.getVideoInfoTag().getTitle() != video_title)):
+            elif self.stream_started == True and (not xbmc.getCondVisibility("Player.HasMedia") or (self.mlb_monitor_file != self.get_playing_file(player)) or (player.getVideoInfoTag().getTitle() != video_title)):
                 xbmc.log(monitor_name + " closing due to stream stopped or changed")
                 break
             elif self.mlb_monitor_started == '':

@@ -57,13 +57,6 @@ AUTO_PLAY_FAV = str(settings.getSetting(id='auto_play_fav'))
 ONLY_FREE_GAMES = str(settings.getSetting(id="only_free_games"))
 GAME_CHANGER_DELAY = int(settings.getSetting(id="game_changer_delay"))
 
-#Monitor setting
-MLB_MONITOR_STARTED = settings.getSetting(id='mlb_monitor_started')
-now = datetime.now()
-if MLB_MONITOR_STARTED != '' and not xbmc.getCondVisibility("Player.HasMedia") and (parse(MLB_MONITOR_STARTED) + timedelta(seconds=5)) < now:
-    xbmc.log("MLB Monitor detection resetting due to no stream playing")
-    settings.setSetting(id='mlb_monitor_started', value='')
-
 #Colors
 SCORE_COLOR = 'FF00B7EB'
 GAMETIME_COLOR = 'FFFFFF66'
