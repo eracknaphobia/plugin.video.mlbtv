@@ -292,6 +292,8 @@ def create_game_listitem(game, game_day, start_inning, today):
                         game_time += ' (Suspended)'
                     elif 'resumedFromDate' in game:
                         game_time += ' (Resumed)'
+                        if stringToDate(game['gameDate'], "%Y-%m-%dT%H:%M:%SZ") > datetime.now():
+                            game_time = display_time + ' ' + game_time
                     for epg in game['content']['media']['epg'][0]['items']:
                         if epg['mediaState'] == 'MEDIA_ON':
                             suspended = 'live'
