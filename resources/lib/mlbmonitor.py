@@ -893,13 +893,13 @@ class MLBMonitor(xbmc.Monitor):
         self.window = xbmcgui.Window(12005)
         w = self.window.getWidth()
         h = self.window.getHeight()
-        xbmc.log(monitor_name + " window size " + str(w) + "x" + str(h))
         vh = 0.5625 * w
         ox = int(w / 2)
         oy = int(((h - vh) / 2) + (vh * (654/720)))
         ow = ox
         oh = int(0.0328125 * w)
-        xbmc.log(monitor_name + " overlay position " + str(ox) + ":" + str(oy) + ", size " + str(ow) + "x" + str(oh))
+        # for debugging overlay position and size, if necessary
+        #xbmc.log(monitor_name + " overlay position " + str(ox) + ":" + str(oy) + ", size " + str(ow) + "x" + str(oh) + " within " + str(w) + "x" + str(h) + " window")
         self.overlay = xbmcgui.ControlImage(ox, oy, ow, oh, BLACK_IMAGE)
         self.window.addControl(self.overlay)
         xbmc.log(monitor_name + " overlay started")
