@@ -970,9 +970,9 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
             if not stream_url.startswith('http://127.0.0.1:43670/'):
                 stream_url = 'http://127.0.0.1:43670/' + stream_url + '?'
             if alternate_english is not None:
-                stream_url += '&alternate_english=' + urllib.quote_plus(alternate_english)
+                stream_url += '&alternate_english=' + urllib.quote_plus('http://127.0.0.1:43670/' + alternate_english)
             if alternate_spanish is not None:
-                stream_url += '&alternate_spanish=' + urllib.quote_plus(alternate_spanish)
+                stream_url += '&alternate_spanish=' + urllib.quote_plus('http://127.0.0.1:43670/' + alternate_spanish)
 
         # valid stream url
         if '.m3u8' in stream_url:
