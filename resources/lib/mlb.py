@@ -534,12 +534,22 @@ def create_big_inning_listitem(game_day):
         else:
             xbmc.log('Fetching Big Inning schedule')
             settings.setSetting(id='big_inning_date', value=today)
-            url = 'https://www.mlb.com/live-stream-games/big-inning'
+            url = 'https://www.mlb.com/live-stream-games/help-center/subscription-access-big-inning'
 
             headers = {
-                'User-Agent': UA_PC,
-                'Origin': 'https://www.mlb.com',
-                'Referer': 'https://www.mlb.com'
+                'authority': 'www.mlb.com',
+                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'accept-language': 'en-US,en;q=0.9',
+                'cache-control': 'no-cache',
+                'dnt': '1',
+                'pragma': 'no-cache',
+                'sec-fetch-dest': 'document',
+                'sec-fetch-mode': 'navigate',
+                'sec-fetch-site': 'none',
+                'sec-fetch-user': '?1',
+                'sec-gpc': '1',
+                'upgrade-insecure-requests': '1',
+                'user-agent': UA_PC
             }
             r = requests.get(url,headers=headers, verify=VERIFY)
             #xbmc.log(r.text)
