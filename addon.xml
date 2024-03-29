@@ -26,6 +26,7 @@
             - fixed Big Inning schedule
             - updated affiliates list
             - require InputStream Adaptive
+            - more graceful stream padding
         </news>
         <language>en</language>
         <platform>all</platform>
