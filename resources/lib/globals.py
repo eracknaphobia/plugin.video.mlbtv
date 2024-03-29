@@ -441,8 +441,13 @@ def stream_to_listitem(stream_url, headers, description, title, icon, fanart, st
                 listitem.setProperty('inputstream', 'inputstream.adaptive')
             else:
                 listitem.setProperty('inputstreamaddon', 'inputstream.adaptive')
+            # IA manifest_type deprecated in Kodi 20, may eventually need to remove this
+            # but will need to ensure manifest type can be auto-detected from streams and proxied streams
             listitem.setProperty('inputstream.adaptive.manifest_type', 'hls')
             listitem.setProperty('inputstream.adaptive.stream_headers', headers)
+            # IA stream_headers deprecated for manifests in Kodi 20, manifest_headers required in Kodi 21+
+            if KODI_VERSION >= 20:
+                listitem.setProperty('inputstream.adaptive.manifest_headers', headers)
             listitem.setProperty('inputstream.adaptive.license_key', "|" + headers)
             # if not using Kodi's resume function, set the start time
             if sys.argv[3] != 'resume:true' and start != '-1':

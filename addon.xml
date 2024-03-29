@@ -27,6 +27,7 @@
             - updated affiliates list
             - require InputStream Adaptive
             - more graceful stream padding
+            - potential Omega compatibility fix
         </news>
         <language>en</language>
         <platform>all</platform>
