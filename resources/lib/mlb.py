@@ -1518,7 +1518,9 @@ def live_fav_game():
 
     auto_play_game_date = str(settings.getSetting(id='auto_play_game_date'))
 
+    # Defaults
     game_pk = None
+    message = None
 
     fav_team_id = getFavTeamId()
 
@@ -1527,10 +1529,19 @@ def live_fav_game():
         now = datetime.now()
         # don't check if it is before the stored next game time (if available)
         auto_play_next_game = str(settings.getSetting(id='auto_play_next_game'))
-        if auto_play_next_game == '' or UTCToLocal(parse(auto_play_next_game)) <= now:
-            # don't check more often than 5 minute intervals
+        auto_play_next_local = None if not auto_play_next_game else UTCToLocal(parse(auto_play_next_game))
+        if auto_play_next_local and now < auto_play_next_local:
+            message = f'{FAV_TEAM} game starts at {auto_play_next_local.strftime("%l:%M %p").strip()}'
+        else:
+            # use result from last check if it is less than 5 minutes old
             auto_play_game_checked = str(settings.getSetting(id='auto_play_game_checked'))
-            if auto_play_game_checked == '' or (parse(auto_play_game_checked) + timedelta(minutes=5)) < now:
+            if bool(auto_play_game_checked) and now < (parse(auto_play_game_checked) + timedelta(minutes=5)):
+                game_pk = str(settings.getSetting(id='auto_play_game_pk'))
+                if not game_pk:
+                    cached_message = str(settings.getSetting(id='auto_play_message'))
+                    if cached_message:
+                        message = cached_message
+            else:
                 settings.setSetting(id='auto_play_game_checked', value=str(now))
 
                 url = API_URL + '/api/v1/schedule'
@@ -1573,13 +1584,25 @@ def live_fav_game():
                         except:
                             pass
 
+                if game_pk:
+                    # Save game_pk in case auto-play is called again within 5 minutes
+                    settings.setSetting(id='auto_play_game_pk', value=game_pk)
                 # set the date setting if there are no more upcoming fav games today
-                if upcoming_game is False:
+                elif upcoming_game is False:
                     xbmc.log('No more upcoming fav games today')
                     settings.setSetting(id='auto_play_game_date', value=game_day)
+                    message = f'{FAV_TEAM} has no more live games today'
                 # otherwise store the time of the next game, and delay further checks until then
-                elif game_pk is None and upcoming_game != 'TBD':
+                elif upcoming_game != 'TBD':
                     xbmc.log('Setting next game time')
                     settings.setSetting(id='auto_play_next_game', value=str(upcoming_game))
+                    message = f'{FAV_TEAM} game starts at {UTCToLocal(upcoming_game).strftime("%l:%M %p").strip()}'
+                else:
+                    message = f'{FAV_TEAM} game start time is TBD'
 
-    return game_pk
+    if not game_pk:
+        if not message:
+            message = f'No live stream found for {FAV_TEAM}'
+        else:
+            settings.setSetting(id='auto_play_message', value=message)
+    return (game_pk, message)
