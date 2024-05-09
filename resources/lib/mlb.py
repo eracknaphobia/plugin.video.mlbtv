@@ -690,22 +690,15 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
                 # or if no favorite team match, look for the home or national streams
                 if (FAV_TEAM != 'None' and 'mediaFeedSubType' in item and item['mediaFeedSubType'] == getFavTeamId()) or (selected_content_id is None and 'mediaFeedType' in item and (item['mediaFeedType'] == 'HOME' or item['mediaFeedType'] == 'NATIONAL' )):
                     # prefer live streams (suspended games can have both a live and archived stream available)
-                    if item['mediaState'] == 'MEDIA_ON':
-                        selected_content_id = item['contentId']
-                        selected_media_state = item['mediaState']
-                        selected_call_letters = item['callLetters']
-                        if 'mediaFeedType' in item:
-                            selected_media_type = item['mediaFeedType']
-                        # once we've found a fav team live stream, we don't need to search any further
-                        if FAV_TEAM != 'None' and 'mediaFeedSubType' in item and item['mediaFeedSubType'] == getFavTeamId():
-                            break
                     # fall back to the first available archive stream, but keep search in case there is a live stream (suspended)
-                    elif item['mediaState'] == 'MEDIA_ARCHIVE' and selected_content_id is None:
-                        selected_content_id = item['contentId']
-                        selected_media_state = item['mediaState']
-                        selected_call_letters = item['callLetters']
-                        if 'mediaFeedType' in item:
-                            selected_media_type = item['mediaFeedType']
+                    selected_content_id = item['contentId']
+                    selected_media_state = item['mediaState']
+                    selected_call_letters = item['callLetters']
+                    if 'mediaFeedType' in item:
+                    	selected_media_type = item['mediaFeedType']
+                    # once we've found a fav team live stream, we don't need to search any further
+                    if item['mediaState'] == 'MEDIA_ON' and FAV_TEAM != 'None' and 'mediaFeedSubType' in item and item['mediaFeedSubType'] == getFavTeamId():
+                    	break
 
     # if coming from the game changer, just return a flag to indicate whether we need to start an overlay
     if overlay_check == 'True':
