@@ -945,18 +945,22 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
         # grab alternate audio tracks, if necessary
         alternate_english = None
         alternate_spanish = None
-        if DISABLE_VIDEO_PADDING == 'false' and broadcast_count == 1 and stream_type == 'video' and len(json_source['media']['epg']) >= 3 and 'items' in json_source['media']['epg'][2]:
-            # national games already include the home streams
-            if selected_media_type == 'NATIONAL':
-                selected_media_type = 'HOME'
-            for item in json_source['media']['epg'][2]['items']:
-                if 'type' in item and item['type'] != selected_media_type and 'contentId' in item:
-                    alt_stream_url, dummy_a, dummy_b, dummy_c = account.get_stream(item['contentId'])
-                    alt_stream_url = re.sub('/(master_radio_complete|master_radio)', '/48K/48_complete', alt_stream_url)
-                    if 'language' in item and item['language'] == 'en':
-                        alternate_english = alt_stream_url
-                    elif 'language' in item and item['language'] == 'es':
-                        alternate_spanish = alt_stream_url
+        try:
+            if DISABLE_VIDEO_PADDING == 'false' and broadcast_count == 1 and stream_type == 'video' and len(json_source['media']['epg']) >= 3 and 'items' in json_source['media']['epg'][2]:
+                # national games already include the home streams
+                if selected_media_type == 'NATIONAL':
+                    selected_media_type = 'HOME'
+                for item in json_source['media']['epg'][2]['items']:
+                    if 'type' in item and item['type'] != selected_media_type and 'contentId' in item:
+                        alt_stream_url, dummy_a, dummy_b, dummy_c = account.get_stream(item['contentId'])
+                        alt_stream_url = re.sub('/(master_radio_complete|master_radio)', '/48K/48_complete', alt_stream_url)
+                        if 'language' in item and item['language'] == 'en':
+                            alternate_english = alt_stream_url
+                        elif 'language' in item and item['language'] == 'es':
+                            alternate_spanish = alt_stream_url
+        except Exception as e:
+            xbmc.log('alternate audio error')
+            pass
 
         # if autoplay, join live
         if autoplay is True:
