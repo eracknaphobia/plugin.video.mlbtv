@@ -185,8 +185,10 @@ class Account:
 
         if 'complete' in r.json()['stream']:
             stream_url = r.json()['stream']['complete']
-        else:
+        elif 'slide' in r.json()['stream']:
             stream_url = r.json()['stream']['slide']
+        else:
+            return False
 
         # skip asking for quality if it's an audio-only stream
         if QUALITY == 'Always Ask' and '_AUDIO_' not in stream_url:
