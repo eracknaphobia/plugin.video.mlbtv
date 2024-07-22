@@ -73,14 +73,6 @@ if 'gamechanger' in params:
 
 # default addon home screen
 if mode is None:
-    # autoplay fav team, if that setting is enabled and a live broadcast is in progress
-    if AUTO_PLAY_FAV == 'true' and FAV_TEAM != 'None':
-        live_game = live_fav_game()
-        if live_game is not None:
-            xbmc.log('Auto-playing live game ' + str(live_game))
-            xbmc.executebuiltin('PlayMedia("plugin://plugin.video.mlbtv/?mode=102&game_pk='+str(live_game)+'")')
-            xbmcplugin.endOfDirectory(addon_handle)
-    # if no autoplay, show the main options
     categories()
 
 # Today's Games
@@ -138,6 +130,20 @@ elif mode == 109:
 elif mode == 110:
     affiliate_menu()
 
+# Auto-play favorite, invoked by script.module.mlbtv_autoplay addon
+elif mode == 111:
+    message = None
+    if FAV_TEAM == 'None':
+        message = 'First set a favorite team in MLB.TV® settings'
+    else:
+        (live_game, message) = live_fav_game()
+        if live_game:
+            xbmc.log('THROMER Auto-playing live game ' + str(live_game))
+            stream_select(live_game, autoplay=True)
+    if message:
+        dialog = xbmcgui.Dialog()
+        dialog.ok('No favorite stream', message)
+
 # Goto Date
 elif mode == 200:
     search_txt = ''
@@ -184,10 +190,10 @@ elif mode == 999:
     sys.exit()
 
 # don't cache today's games or addon home screen
-if mode == 100 or (mode is None and AUTO_PLAY_FAV == 'true' and FAV_TEAM != 'None'):
+if mode == 100 or mode == None:
     xbmcplugin.endOfDirectory(addon_handle, cacheToDisc=False)
 # also don't cache previous/next days
 elif mode == 101:
     xbmcplugin.endOfDirectory(addon_handle, cacheToDisc=False, updateListing=True)
-else:
+elif mode != 111:
     xbmcplugin.endOfDirectory(addon_handle)

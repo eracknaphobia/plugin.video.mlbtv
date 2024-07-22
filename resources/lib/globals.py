@@ -53,7 +53,6 @@ SINGLE_TEAM = str(settings.getSetting(id='single_team'))
 AUTO_SELECT_STREAM = str(settings.getSetting(id='auto_select_stream'))
 CATCH_UP = str(settings.getSetting(id='catch_up'))
 ASK_TO_SKIP = str(settings.getSetting(id='ask_to_skip'))
-AUTO_PLAY_FAV = str(settings.getSetting(id='auto_play_fav'))
 ONLY_FREE_GAMES = str(settings.getSetting(id="only_free_games"))
 GAME_CHANGER_DELAY = int(settings.getSetting(id="game_changer_delay"))
 
