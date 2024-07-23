@@ -22,8 +22,8 @@ class MLBMonitor(xbmc.Monitor):
     #These are the action events to keep, in addition to the last event of each at-bat, if we're skipping non-decision pitches
     ACTION_TYPES = ['Wild Pitch', 'Passed Ball', 'Stolen Base', 'Caught Stealing', 'Pickoff', 'Error', 'Out', 'Balk', 'Defensive Indiff', 'Other Advance']
     #Pad events at both start (-) and end (+)
-    EVENT_START_PADDING = 5
-    EVENT_END_PADDING = 16
+    EVENT_START_PADDING = -3
+    EVENT_END_PADDING = 8
     #Also use pitch start padding for idle time / specific player skipping
     PITCH_START_PADDING = -1
     #Only skip if a break is at least this long
