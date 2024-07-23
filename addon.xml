@@ -27,6 +27,7 @@
             - Removed unnecessary alternate audio proxying
             - Fixed padding
             - Fixed skipping
+            - Restored feed/blackout labels
         </news>
         <language>en</language>
         <platform>all</platform>
