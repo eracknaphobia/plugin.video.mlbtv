@@ -222,7 +222,7 @@ class Account:
         stream_url = r.json()['data']['initPlaybackSession']['playback']['url']
         xbmc.log(f'Stream URL: {stream_url}')
         headers = 'User-Agent=' + UA_PC
-        return stream_url, headers, '1', None
+        return stream_url, headers
     
     def get_device_session_id(self):
         headers = {
@@ -272,4 +272,18 @@ class Account:
         session_id = r.json()['data']['initSession']['sessionId']
 
         return device_id, session_id
+        
+    def get_broadcast_start_time(self, stream_url):
+        try:
+            variant_url = stream_url.replace('.m3u8', '_5600K.m3u8')
+            r = requests.get(variant_url, headers={'User-Agent': UA_PC}, verify=self.verify)
+            content = r.text
+        
+            line_array = content.splitlines()
+            for line in line_array:
+                if line.startswith('#EXT-X-PROGRAM-DATE-TIME:'):
+                    return parse(line[25:])
+        except Exception as e:
+            xbmc.log('error getting get_broadcast_start_time ' + str(e))
+        return None
 

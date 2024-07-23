@@ -852,8 +852,7 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
         # need to log in to get the stream url and headers
         from .account import Account
         account = Account()
-        # get the broadcast start offset and timestamp too, to know where to start playback and calculate skip markers, if necessary
-        stream_url, headers, broadcast_start_offset, broadcast_start_timestamp = account.get_stream(selected_content_id)
+        stream_url, headers = account.get_stream(selected_content_id)
 
         if selected_media_state == 'MEDIA_ON':
             is_live = True
@@ -932,6 +931,10 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
             # cancel will exit
             if skip_type == -1:
                 sys.exit()
+                            
+        # get the broadcast_start_timestamp if we are starting at an inning or skipping
+        if skip_type > 0 or start_inning > 0:
+            broadcast_start_timestamp = account.get_broadcast_start_time(stream_url)
 
         # if autoplay, join live
         if autoplay is True:
