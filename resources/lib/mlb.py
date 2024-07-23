@@ -715,13 +715,6 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
         else:
             return False
 
-    # loop through the streams to count video broadcasts (for determining whether we need alternate audio)
-    broadcast_count = 0
-    for item in epg:
-        # ignore audio streams (without a mediaFeedType) and in-market streams
-        if 'mediaFeedType' in item and not item['mediaFeedType'].startswith('IN_'):
-            broadcast_count += 1
-
     # fallback to manual stream selection if auto selection is disabled, bypassed, or didn't find anything, and we're not looking to force autoplay
     if selected_content_id is None and autoplay is False:
         # default stream selection list starts with highlights option
@@ -940,22 +933,6 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
             if skip_type == -1:
                 sys.exit()
 
-        # grab alternate audio tracks, if necessary
-        alternate_english = None
-        alternate_spanish = None
-        if DISABLE_VIDEO_PADDING == 'false' and broadcast_count == 1 and stream_type == 'video' and len(json_source['media']['epg']) >= 3 and 'items' in json_source['media']['epg'][2]:
-            # national games already include the home streams
-            if selected_media_type == 'NATIONAL':
-                selected_media_type = 'HOME'
-            for item in json_source['media']['epg'][2]['items']:
-                if 'type' in item and item['type'] != selected_media_type and 'contentId' in item:
-                    alt_stream_url, dummy_a, dummy_b, dummy_c = account.get_stream(item['mediaId'])
-                    alt_stream_url = re.sub('/(master_radio_complete|master_radio)', '/48K/48_complete', alt_stream_url)
-                    if 'language' in item and item['language'] == 'en':
-                        alternate_english = alt_stream_url
-                    elif 'language' in item and item['language'] == 'es':
-                        alternate_spanish = alt_stream_url
-
         # if autoplay, join live
         if autoplay is True:
             broadcast_start_offset = '-1'
@@ -964,16 +941,6 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
             pad = random.randint((3600 / SECONDS_PER_SEGMENT), (7200 / SECONDS_PER_SEGMENT))
             # pass padding as URL querystring parameter
             stream_url = 'http://127.0.0.1:43670/' + stream_url + '?pad=' + str(pad)
-
-        # add extra alternate audio tracks, if necessary
-        if DISABLE_VIDEO_PADDING == 'false' and (alternate_english is not None or alternate_spanish is not None):
-            # pass any extra alternate audio tracks as URL querystring parameters
-            if not stream_url.startswith('http://127.0.0.1:43670/'):
-                stream_url = 'http://127.0.0.1:43670/' + stream_url + '?'
-            if alternate_english is not None:
-                stream_url += '&alternate_english=' + urllib.quote_plus('http://127.0.0.1:43670/' + alternate_english)
-            if alternate_spanish is not None:
-                stream_url += '&alternate_spanish=' + urllib.quote_plus('http://127.0.0.1:43670/' + alternate_spanish)
 
         # valid stream url
         if '.m3u8' in stream_url:

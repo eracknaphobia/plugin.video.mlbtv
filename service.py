@@ -58,17 +58,11 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         headers = {}
         pad = 0
-        alternate_english = None
-        alternate_spanish = None
 
         # parse the querystring parameters component
         parsed_qs = parse_qs(parsed_url.query)
         if 'pad' in parsed_qs:
             pad = int(parsed_qs['pad'][0])
-        if 'alternate_english' in parsed_qs:
-            alternate_english = urllib.unquote_plus(parsed_qs['alternate_english'][0])
-        if 'alternate_spanish' in parsed_qs:
-            alternate_spanish = urllib.unquote_plus(parsed_qs['alternate_spanish'][0])
 
         for key in self.headers:
             if key.lower() not in REMOVE_IN_HEADERS:
@@ -104,11 +98,6 @@ class RequestHandler(BaseHTTPRequestHandler):
                     new_line_array.append(new_line)
                 else:
                     new_line_array.append(line)
-                    if line == '#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aac",LANGUAGE="en",NAME="English",AUTOSELECT=YES,DEFAULT=YES':
-                        if alternate_english is not None:
-                            new_line_array.append('#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aac",NAME="Alternate English",LANGUAGE="en",AUTOSELECT=YES,DEFAULT=NO,URI="' + PROXY_URL + alternate_english + '?' + parsed_url.query + '"')
-                        if alternate_spanish is not None:
-                            new_line_array.append('#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aac",NAME="Alternate Spanish",LANGUAGE="es",AUTOSELECT=YES,DEFAULT=NO,URI="' + PROXY_URL + alternate_spanish + '?' + parsed_url.query + '"')
             elif line != '':
                 absolute_url = urljoin(url, line)
                 if absolute_url.endswith(STREAM_EXTENSION) and not absolute_url.startswith(PROXY_URL):
