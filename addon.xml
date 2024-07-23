@@ -25,6 +25,7 @@
             - Fix invalid access error
             - Restore radio feeds
             - Removed unnecessary alternate audio proxying
+            - Fixed padding
         </news>
         <language>en</language>
         <platform>all</platform>
