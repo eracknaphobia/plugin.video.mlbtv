@@ -1383,7 +1383,8 @@ class MLBMonitor(xbmc.Monitor):
         #headers = {
         #    'User-Agent': UA_PC
         #}
-        url = 'http://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=' + date_string + '&endDate=' + date_string + '&hydrate=game(content(media(epg))),linescore,team,flags,gameInfo'
+        #url = 'http://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=' + date_string + '&endDate=' + date_string + '&hydrate=game(content(media(epg))),linescore,team,flags,gameInfo'
+        url = 'http://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=' + date_string + '&endDate=' + date_string + '&hydrate=broadcasts(all),linescore,team,flags,gameInfo'
         headers = {
             'User-Agent': UA_PC,
             'Origin': 'https://www.mlb.com',
@@ -1434,9 +1435,19 @@ class MLBMonitor(xbmc.Monitor):
                         continue
 
                     # Game is not broadcast
-                    if 'content' not in game or 'media' not in game['content'] or 'epg' not in game['content']['media'] or len(game['content']['media']['epg']) == 0 or game['content']['media']['epg'][0]['title'] != 'MLBTV' or 'items' not in game['content']['media']['epg'][0] or len(game['content']['media']['epg'][0]['items']) == 0:
+                    #if 'content' not in game or 'media' not in game['content'] or 'epg' not in game['content']['media'] or len(game['content']['media']['epg']) == 0 or game['content']['media']['epg'][0]['title'] != 'MLBTV' or 'items' not in game['content']['media']['epg'][0] or len(game['content']['media']['epg'][0]['items']) == 0:
+                    if 'broadcasts' not in game or len(game['broadcasts']) == 0:
                         omitted_games['no_broadcast'].append(teams)
                         continue
+                    else:
+                        tv_broadcast = False
+                        for broadcast in game['broadcasts']:
+                            if broadcast['type'] == 'TV':
+                                tv_broadcast = True
+                                break
+                        if tv_broadcast is False:
+                            omitted_games['no_broadcast'].append(teams)
+                            continue
 
                     # Game is blacked out
                     if game_pk in blackouts:

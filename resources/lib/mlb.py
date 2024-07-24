@@ -644,7 +644,8 @@ def create_game_changer_listitem(blackouts, inprogress_exists, game_changer_star
 
 def stream_select(game_pk, spoiler='True', suspended='False', start_inning='False', blackout='False', description=None, name=None, icon=None, fanart=None, from_context_menu=False, autoplay=False, overlay_check='False', gamechanger='False'):
     # fetch the epg content using the game_pk
-    url = f'{API_URL}/api/v1/schedule?gamePk={game_pk}&hydrate=team,linescore,xrefId,flags,review,broadcasts(all),,seriesStatus(useOverride=true),statusFlags,story&sortBy=gameDate,gameStatus,gameType'
+    #url = f'{API_URL}/api/v1/schedule?gamePk={game_pk}&hydrate=team,linescore,xrefId,flags,review,broadcasts(all),,seriesStatus(useOverride=true),statusFlags,story&sortBy=gameDate,gameStatus,gameType'
+    url = f'{API_URL}/api/v1/schedule?gamePk={game_pk}&hydrate=broadcasts(all)'
     headers = {
         'User-Agent': UA_PC
     }
@@ -685,8 +686,8 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
     if ((AUTO_SELECT_STREAM == 'true' and from_context_menu is False and suspended != 'archive') or autoplay is True) and (blackout == 'False' or (blackout != 'True' and blackout < now)):
         # loop through the streams to determine the best match
         for item in epg:        
-            # ignore streams that haven't started yet, audio streams (without a mediaFeedType), and in-market streams
-            if item['mediaState']['mediaStateCode'] != 'MEDIA_OFF': # and 'mediaFeedType' in item and not item['mediaFeedType'].startswith('IN_'):
+            # ignore streams that haven't started yet, audio streams, and in-market streams
+            if item['mediaState']['mediaStateCode'] != 'MEDIA_OFF' and item['type'] == 'TV': # and not item['mediaFeedType'].startswith('IN_'):
                 # check if our favorite team (if defined) is associated with this stream
                 # or if no favorite team match, look for the home or national streams
                 #if (FAV_TEAM != 'None' and 'mediaFeedSubType' in item and item['mediaFeedSubType'] == getFavTeamId()) or (selected_content_id is None and 'mediaFeedType' in item and (item['mediaFeedType'] == 'HOME' or item['mediaFeedType'] == 'NATIONAL' )):
