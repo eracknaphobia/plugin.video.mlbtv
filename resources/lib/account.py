@@ -21,16 +21,9 @@ class Account:
 
     def __init__(self):
         self.username = self.addon.getSetting('username')
-        self.password = self.addon.getSetting('password')        
-        self.did = self.device_id()
+        self.password = self.addon.getSetting('password')
         self.util = Util()
         self.media_url = 'https://media-gateway.mlb.com/graphql'
-
-    def device_id(self):
-        if self.addon.getSetting('device_id') == '':
-            self.addon.setSetting('device_id', str(uuid.uuid4()))
-
-        return self.addon.getSetting('device_id')
 
     def login(self):
         # Check if username and password are provided
@@ -62,6 +55,7 @@ class Account:
                 login_token_expiry = datetime.now() + timedelta(seconds=int(r.json()['expires_in']))
                 self.addon.setSetting('login_token', login_token)
                 self.addon.setSetting('login_token_expiry', str(login_token_expiry))
+                self.get_device_session_id()
             else:
                 dialog = xbmcgui.Dialog()
                 msg = LOCAL_STRING(30263)
@@ -70,6 +64,8 @@ class Account:
                 dialog.notification(LOCAL_STRING(30262), msg, ICON, 5000, False)
                 self.addon.setSetting('login_token', '')
                 self.addon.setSetting('login_token_expiry', '')
+                self.addon.setSetting('device_id', '')
+                self.addon.setSetting('session_key', '')
                 sys.exit()
 
 
@@ -77,18 +73,10 @@ class Account:
         self.util.delete_cookies()
         self.addon.setSetting('login_token', '')
         self.addon.setSetting('login_token_expiry', '')
+        self.addon.setSetting('device_id', '')
+        self.addon.setSetting('session_key', '')
         self.addon.setSetting('username', '')
         self.addon.setSetting('password', '')
-
-    def media_entitlement(self):
-        url = 'https://media-entitlement.mlb.com/api/v3/jwt?os=Android&appname=AtBat&did=' + self.device_id()
-        headers = {'User-Agent': UA_ANDROID,
-                   'Authorization': 'Bearer ' + self.login_token()
-                   }
-
-        r = requests.get(url, headers=headers, verify=self.verify)
-
-        return r.text
 
     # need to login to access featured videos like Big Inning and MiLB games
     def login_token(self):
@@ -102,54 +90,9 @@ class Account:
     def access_token(self):
         return self.login_token()
 
-    def get_playback_url(self, content_id):
-        auth = self.access_token()
-        url = 'https://search-api-mlbtv.mlb.com/svc/search/v2/graphql/persisted/query/core/Airings' \
-              '?variables=%7B%22contentId%22%3A%22' + content_id + '%22%7D'
-
-        headers = {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer ' + auth,
-            'X-BAMSDK-Version': 'v4.3.0',
-            'X-BAMSDK-Platform': 'android-tv',
-            'User-Agent': 'BAMSDK/v4.3.0 (mlbaseball-7993996e 8.1.0; v2.0/v4.3.0; android; tv)'
-        }
-
-        r = requests.get(url, headers=headers, cookies=self.util.load_cookies(), verify=self.verify)
-        if not r.ok:
-            dialog = xbmcgui.Dialog()
-            msg = ""
-            for item in r.json()['errors']:
-                msg += item['code'] + '\n'
-            dialog.notification(LOCAL_STRING(30270), msg, self.icon, 5000, False)
-            sys.exit()
-
-        json_source = r.json()
-
-        playback_url = json_source['data']['Airings'][0]['playbackUrls'][0]['href']
-
-        broadcast_start_offset = '1'
-        broadcast_start_timestamp = None
-        try:
-            # make sure we have milestone data
-            if 'data' in json_source and 'Airings' in json_source['data'] and len(json_source['data']['Airings']) > 0 and 'milestones' in json_source['data']['Airings'][0]:
-                for milestone in json_source['data']['Airings'][0]['milestones']:
-                    if milestone['milestoneType'] == 'BROADCAST_START':
-                        offset_index = 1
-                        startDatetime_index = 0
-                        if milestone['milestoneTime'][0]['type'] == 'offset':
-                            offset_index = 0
-                            startDatetime_index = 1
-                        broadcast_start_offset = str(milestone['milestoneTime'][offset_index]['start'])
-                        broadcast_start_timestamp = parse(milestone['milestoneTime'][startDatetime_index]['startDatetime']) - timedelta(seconds=milestone['milestoneTime'][offset_index]['start'])
-                        break
-        except:
-            pass
-
-        return auth, playback_url, broadcast_start_offset, broadcast_start_timestamp
-
     def get_stream(self, content_id):
-        device_id, session_id = self.get_device_session_id()
+        if self.addon.getSetting('device_id') == '' or self.addon.getSetting('session_key') == '':
+            self.get_device_session_id()
         headers = {
             'User-Agent': UA_PC,
             'Authorization': 'Bearer ' + self.login_token(),
@@ -203,8 +146,8 @@ class Account:
                 "adCapabilities": ["GOOGLE_STANDALONE_AD_PODS"],                
                 "mediaId": content_id,
                 "quality": "PLACEHOLDER",
-                "deviceId": device_id,
-                "sessionId": session_id
+                "deviceId": self.addon.getSetting('device_id'),
+                "sessionId": self.addon.getSetting('session_key')
             }
         }
         xbmc.log(str(data))
@@ -270,8 +213,9 @@ class Account:
         r = requests.post(self.media_url, headers=headers, json=data)
         device_id = r.json()['data']['initSession']['deviceId']
         session_id = r.json()['data']['initSession']['sessionId']
-
-        return device_id, session_id
+        
+        self.addon.setSetting('device_id', device_id)
+        self.addon.setSetting('session_key', session_id)
         
     def get_broadcast_start_time(self, stream_url):
         try:
