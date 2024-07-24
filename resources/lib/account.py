@@ -230,4 +230,3 @@ class Account:
         except Exception as e:
             xbmc.log('error getting get_broadcast_start_time ' + str(e))
         return None
-
