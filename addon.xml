@@ -26,9 +26,10 @@
             - Restore radio feeds
             - Removed unnecessary alternate audio proxying
             - Fixed padding
-            - Fixed skipping including commercial breaks
+            - Fixed skipping including commercial breaks, adjusted skip timing
             - Restored feed/blackout labels
             - Restored Game Changer
+            - Restored Big Inning
         </news>
         <language>en</language>
         <platform>all</platform>

@@ -1020,7 +1020,8 @@ def featured_stream_select(featured_video, name, description, start_inning=None,
     # otherwise assume it is a video title (used to call Big Inning from the schedule)
     else:
         xbmc.log('must search for video url with title')
-        video_list = get_video_list('https://dapi.mlbinfra.com/v2/content/en-us/vsmcontents/mlb-tv-welcome-center-big-inning-show')
+        #video_list = get_video_list('https://dapi.mlbinfra.com/v2/content/en-us/vsmcontents/mlb-tv-welcome-center-big-inning-show')
+        video_list = get_video_list('https://dapi.cms.mlbinfra.com/v2/content/en-us/sel-mlbtv-featured-svod-video-list')
         eventList = None
         if 'items' in video_list:
             eventList = video_list['items']
