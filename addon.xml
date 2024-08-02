@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.mlbtv" name="MLB.TV®" version="2024.7.22+matrix.1" provider-name="eracknaphobia, tonywagner">
+<addon id="plugin.video.mlbtv" name="MLB.TV®" version="2024.8.1+matrix.1" provider-name="eracknaphobia, tonywagner">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.pytz" />
@@ -28,6 +28,7 @@
             - Restored feed/blackout labels
             - Restored Game Changer
             - Restored Big Inning
+            - Added MLB Network for eligible subscribers
         </news>
         <language>en</language>
         <platform>all</platform>

@@ -66,6 +66,7 @@ class Account:
                 self.addon.setSetting('login_token_expiry', '')
                 self.addon.setSetting('device_id', '')
                 self.addon.setSetting('session_key', '')
+                self.addon.setSetting('entitlements', '')
                 sys.exit()
 
 
@@ -75,6 +76,7 @@ class Account:
         self.addon.setSetting('login_token_expiry', '')
         self.addon.setSetting('device_id', '')
         self.addon.setSetting('session_key', '')
+        self.addon.setSetting('entitlements', '')
         self.addon.setSetting('username', '')
         self.addon.setSetting('password', '')
 
@@ -213,9 +215,18 @@ class Account:
         r = requests.post(self.media_url, headers=headers, json=data)
         device_id = r.json()['data']['initSession']['deviceId']
         session_id = r.json()['data']['initSession']['sessionId']
+        entitlements = []
+        for entitlement in r.json()['data']['initSession']['entitlements']:
+            entitlements.append(entitlement['code'])
         
         self.addon.setSetting('device_id', device_id)
         self.addon.setSetting('session_key', session_id)
+        self.addon.setSetting('entitlements', json.dumps(entitlements))
+
+    def get_entitlements(self):
+        if self.addon.getSetting('entitlements') == '':
+            self.get_device_session_id()
+        return self.addon.getSetting('entitlements')
         
     def get_broadcast_start_time(self, stream_url):
         try:

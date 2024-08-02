@@ -112,6 +112,14 @@ def todays_games(game_day, start_inning='False', sport=MLB_ID, teams='None'):
 
     # Big Inning and game changer only available for non-free accounts (and not in minor league lists)
     if ONLY_FREE_GAMES != 'true' and sport == MLB_ID:
+        # if the requested date is today,
+        # then show the MLB Network listitem
+        from .account import Account
+        account = Account()
+        entitlements = json.loads(account.get_entitlements())
+        if today == game_day and ('MLBN' in entitlements or 'MLBALL' in entitlements or 'MLBTVMLBNADOBEPASS' in entitlements or 'EXECMLB' in entitlements):
+            create_mlb_network_listitem()
+            
         # if the requested date is not in the past, we have games for this date, and it's a regular season date,
         # then show the Big Inning listitem
         if today <= game_day and len(games) > 0 and games[0]['seriesDescription'] == 'Regular Season':
@@ -517,6 +525,28 @@ def featured_videos(featured_video=None):
                 isFolder=True
                 xbmcplugin.addDirectoryItem(handle=addon_handle,url=u,listitem=liz,isFolder=isFolder)
                 xbmcplugin.setContent(addon_handle, 'episodes')
+
+
+# display a MLB Network item within a game list
+def create_mlb_network_listitem():
+    try:
+        title = LOCAL_STRING(30367) + LOCAL_STRING(30438)
+        liz=xbmcgui.ListItem(title)
+        description = LOCAL_STRING(30439)
+        liz.setInfo( type="Video", infoLabels={ "Title": title, "plot": description } )
+        video_url = 'https://falcon.mlbinfra.com/api/v1/linear/mlbn'
+        icon = 'https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcQRgC2JdbtFplKjfhXm5_vzpkUQ3XyDT91SEnHmuB0p5tReQ3Ez'
+        fanart = 'https://img.mlbstatic.com/mlb-images/image/private/ar_16:9,g_auto,q_auto:good,w_1536,c_fill,f_jpg/mlb/i138wzlhv79dq3xvo1ti'
+        liz.setArt({'icon': icon, 'thumb': icon, 'fanart': fanart})
+        liz.setProperty("IsPlayable", "true")
+        u=sys.argv[0]+"?mode="+str(301)+"&featured_video="+urllib.quote_plus(video_url)+"&name="+urllib.quote_plus(title)
+        isFolder=False
+
+        xbmcplugin.addDirectoryItem(handle=addon_handle,url=u,listitem=liz,isFolder=isFolder)
+        xbmcplugin.setContent(addon_handle, 'episodes')
+    except Exception as e:
+        xbmc.log('mlb network error : ' + str(e))
+        pass
 
 
 # display a Big Inning item within a game list
