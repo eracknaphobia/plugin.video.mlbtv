@@ -705,7 +705,6 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
     stream_type = 'video'
     skip_possible = True # to determine if possible to show skip options dialog
     skip_type = 0
-    skip_adjust = 0 # only used for MiLB games
     is_live = False # to pass to skip monitor
     # convert start inning values to integers
     if start_inning == 'False':
@@ -1025,7 +1024,7 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
 
                     # call the game monitor for skips and/or to stop the overlay
                     if ((skip_type > 0 or start_inning > 0) and broadcast_start_timestamp is not None) or (HIDE_SCORES_TICKER == 'true' and selected_call_letters.startswith('BS')):
-                        mlbmonitor.game_monitor(skip_type, game_pk, broadcast_start_timestamp, skip_adjust, stream_url, is_live, start_inning, start_inning_half)
+                        mlbmonitor.game_monitor(skip_type, game_pk, broadcast_start_timestamp, stream_url, is_live, start_inning, start_inning_half)
 
         # otherwise exit
         else:
@@ -1040,8 +1039,6 @@ def featured_stream_select(featured_video, name, description, start_inning=None,
     broadcast_start_timestamp = None # to pass to skip monitor
     skip_possible = True # to determine if possible to show skip options dialog
     skip_type = 0
-    settings = xbmcaddon.Addon(id='plugin.video.mlbtv')
-    skip_adjust = settings.getSetting(id="milb_skip_adjust")
     is_live = False # to pass to skip monitor
     # convert start inning values to integers
     if start_inning == 'False':
@@ -1173,19 +1170,6 @@ def featured_stream_select(featured_video, name, description, start_inning=None,
                 elif skip_type > 1:
                     skip_type += 1
 
-                if skip_type > 0 or start_inning > 0:
-                    if skip_adjust == 'Always Ask':
-                        # skip adjust dialog
-                        skip_adjust_options = ['-15', '-10', '-5', '0', '5', '10', '15']
-                        p = dialog.select(LOCAL_STRING(30434), skip_adjust_options)
-                        # cancel will exit
-                        if p == -1:
-                            sys.exit()
-                        else:
-                            skip_adjust = int(skip_adjust_options[p])
-                    else:
-                        skip_adjust = int(skip_adjust)
-
 
         headers = 'User-Agent=' + UA_PC
         if '.m3u8' in video_stream_url and QUALITY == 'Always Ask':
@@ -1200,7 +1184,7 @@ def featured_stream_select(featured_video, name, description, start_inning=None,
         if game_pk is not None and (skip_type > 0 or start_inning > 0) and broadcast_start_timestamp is not None:
             from .mlbmonitor import MLBMonitor
             mlbmonitor = MLBMonitor()
-            mlbmonitor.game_monitor(skip_type, game_pk, broadcast_start_timestamp, skip_adjust, video_stream_url, is_live, start_inning, start_inning_half)
+            mlbmonitor.game_monitor(skip_type, game_pk, broadcast_start_timestamp, video_stream_url, is_live, start_inning, start_inning_half)
     else:
         xbmc.log('unable to find stream for featured video')
 
