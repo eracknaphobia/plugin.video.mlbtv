@@ -17,6 +17,8 @@ class MLBMonitor(xbmc.Monitor):
     mlb_monitor_file = ''
 
     #Skip monitor
+    skip_adjust_start = 0
+    skip_adjust_end = 0
     #These are the break events to skip
     BREAK_TYPES = ['Game Advisory', 'Pitching Substitution', 'Offensive Substitution', 'Defensive Sub', 'Defensive Switch', 'Runner Placed On Base', 'Injury']
     #These are the action events to keep, in addition to the last event of each at-bat, if we're skipping non-decision pitches
@@ -837,6 +839,9 @@ class MLBMonitor(xbmc.Monitor):
             if new_mlb_monitor_started != '' and self.mlb_monitor_started != new_mlb_monitor_started:
                 xbmc.log("MLB Monitor from " + self.mlb_monitor_started + " closing due to another monitor starting on " + new_mlb_monitor_started)
                 self.mlb_monitor_started = ''
+            # also update skip adjust values
+            self.skip_adjust_start = int(settings.getSetting(id="skip_adjust_start"))
+            self.skip_adjust_end = int(settings.getSetting(id="skip_adjust_end"))
 
     def get_playing_file(self, player):
         try:
@@ -923,7 +928,7 @@ class MLBMonitor(xbmc.Monitor):
         player.showSubtitles(False)
         xbmc.log(monitor_name + " captions disabled")
 
-    def game_monitor(self, skip_type, game_pk, broadcast_start_timestamp, skip_adjust, stream_url, is_live, start_inning, start_inning_half):
+    def game_monitor(self, skip_type, game_pk, broadcast_start_timestamp, stream_url, is_live, start_inning, start_inning_half):
         xbmc.log("Game monitor for " + game_pk + " starting")
 
         self.mlb_monitor_started = str(datetime.now())
@@ -934,6 +939,9 @@ class MLBMonitor(xbmc.Monitor):
             monitor_name = 'Skip'
             if self.overlay is not None:
                 monitor_name += ' and Overlay'
+            # get initial skip adjust values
+            self.skip_adjust_start = int(settings.getSetting(id="skip_adjust_start"))
+            self.skip_adjust_end = int(settings.getSetting(id="skip_adjust_end"))
         # overlay only monitor
         else:
             monitor_name = 'Overlay'
@@ -950,7 +958,7 @@ class MLBMonitor(xbmc.Monitor):
 
             # fetch skip markers
             self.skip_to_players = None
-            skip_markers, self.skip_to_players = self.get_skip_markers(skip_type, game_pk, broadcast_start_timestamp, skip_adjust, monitor_name, self.skip_to_players, stream_url, 0, start_inning, start_inning_half)
+            skip_markers, self.skip_to_players = self.get_skip_markers(skip_type, game_pk, broadcast_start_timestamp, monitor_name, self.skip_to_players, stream_url, 0, start_inning, start_inning_half)
             xbmc.log(monitor_name + ' skip markers : ' + str(skip_markers))
 
             while not self.monitor.abortRequested():
@@ -974,14 +982,19 @@ class MLBMonitor(xbmc.Monitor):
                     # make sure we're not paused, and current time is valid (less than 10 hours) -- sometimes Kodi was returning a crazy large current time as the stream was starting
                     if current_time > 0 and current_time != last_time and current_time < 36000:
                         last_time = current_time
+                        if skip_markers[0][0] > 0:
+                            current_break_start = skip_markers[0][0] + self.skip_adjust_end
+                        else:
+                            current_break_start = skip_markers[0][0]
+                        current_break_end = skip_markers[0][1] + self.skip_adjust_start
                         # remove any past skip markers so user can seek backward freely
-                        while len(skip_markers) > 0 and current_time > skip_markers[0][1]:
-                            xbmc.log(monitor_name + " removed skip marker at " + str(skip_markers[0][1]) + ", before current time " + str(current_time))
+                        while len(skip_markers) > 0 and current_time > current_break_end:
+                            xbmc.log(monitor_name + " removed skip marker at " + str(current_break_end) + ", before current time " + str(current_time))
                             skip_markers.pop(0)
                         # seek to end of break if we fall within skip marker range, then remove marker so user can seek backward freely
-                        if len(skip_markers) > 0 and current_time >= skip_markers[0][0] and current_time < skip_markers[0][1]:
-                            xbmc.log(monitor_name + " processed skip marker at " + str(skip_markers[0][1]))
-                            player.seekTime(skip_markers[0][1])
+                        if len(skip_markers) > 0 and current_time >= current_break_start and current_time < current_break_end:
+                            xbmc.log(monitor_name + " processed skip marker at " + str(current_break_end))
+                            player.seekTime(current_break_end)
                             skip_markers.pop(0)
                             # since we just processed a skip marker, we can delay further processing a little bit
                             xbmc.sleep(2000)
@@ -990,7 +1003,7 @@ class MLBMonitor(xbmc.Monitor):
                             # refresh current time, and look ahead slightly
                             current_time = player.getTime() + 10
                             xbmc.log(monitor_name + ' refreshing skip markers from ' + str(current_time))
-                            skip_markers, self.skip_to_players = self.get_skip_markers(skip_type, game_pk, broadcast_start_timestamp, skip_adjust, monitor_name, self.skip_to_players, stream_url, current_time)
+                            skip_markers, self.skip_to_players = self.get_skip_markers(skip_type, game_pk, broadcast_start_timestamp, monitor_name, self.skip_to_players, stream_url, current_time)
                             xbmc.log(monitor_name + ' refreshed skip markers : ' + str(skip_markers))
 
         # continue monitoring if overlay is still active
@@ -1046,7 +1059,7 @@ class MLBMonitor(xbmc.Monitor):
 
 
     # calculate skip markers from gameday events
-    def get_skip_markers(self, skip_type, game_pk, broadcast_start_timestamp, skip_adjust, monitor_name, skip_to_players, stream_url, current_time=0, start_inning=0, start_inning_half='top'):
+    def get_skip_markers(self, skip_type, game_pk, broadcast_start_timestamp, monitor_name, skip_to_players, stream_url, current_time=0, start_inning=0, start_inning_half='top'):
         xbmc.log(monitor_name + ' getting skip markers for skip type ' + str(skip_type))
         if current_time > 0:
             xbmc.log(monitor_name + ' searching beyond ' + str(current_time))
@@ -1057,12 +1070,6 @@ class MLBMonitor(xbmc.Monitor):
         json_source = self.get_gameday_data(game_pk, monitor_name)
 
         settings = xbmcaddon.Addon(id='plugin.video.mlbtv')
-        skip_adjust_start = int(settings.getSetting(id="skip_adjust_start"))
-        skip_adjust_end = int(settings.getSetting(id="skip_adjust_end"))
-
-        # extra skip adjust (for MiLB games)
-        skip_adjust_start += skip_adjust
-        skip_adjust_end += skip_adjust
 
         # calculate total skip time (for fun)
         total_skip_time = 0
@@ -1139,7 +1146,7 @@ class MLBMonitor(xbmc.Monitor):
                                 if 'event' in playEvent['details'] and playEvent['details']['event'] in self.BREAK_TYPES:
                                     continue
                                 else:
-                                    break_end = (parse(playEvent['startTime']) - broadcast_start_timestamp).total_seconds() + event_start_padding + skip_adjust_start
+                                    break_end = (parse(playEvent['startTime']) - broadcast_start_timestamp).total_seconds() + event_start_padding
                                     xbmc.log(monitor_name + ' finishing initial inning skip at ' + str(break_end))
                                     skip_markers.append([break_start, break_end])
                                     total_skip_time += break_end - break_start
@@ -1196,7 +1203,7 @@ class MLBMonitor(xbmc.Monitor):
                         if 'event' in playEvent['details'] and playEvent['details']['event'] in self.BREAK_TYPES:
                             # if we're in the process of skipping all breaks, treat the first break type we find as another inning break
                             if skip_type == 2 and previous_inning > 0:
-                                break_start = (parse(playEvent['startTime']) - broadcast_start_timestamp).total_seconds() + self.EVENT_END_PADDING + skip_adjust_end
+                                break_start = (parse(playEvent['startTime']) - broadcast_start_timestamp).total_seconds() + self.EVENT_END_PADDING
                                 previous_inning = 0
                             continue
                         else:
@@ -1217,7 +1224,7 @@ class MLBMonitor(xbmc.Monitor):
                             if action_index is None:
                                 continue
                             else:
-                                break_end = (parse(play['playEvents'][action_index]['startTime']) - broadcast_start_timestamp).total_seconds() + event_start_padding + skip_adjust_start
+                                break_end = (parse(play['playEvents'][action_index]['startTime']) - broadcast_start_timestamp).total_seconds() + event_start_padding
 
                                 # attempt to fix erroneous timestamps, like NYY-SEA 2022-08-09, bottom 11
                                 if break_end < break_start:
@@ -1242,7 +1249,7 @@ class MLBMonitor(xbmc.Monitor):
                                     # exit loop after found inning, if not skipping breaks
                                     if skip_type == 0:
                                         break
-                                break_start = (parse(play['playEvents'][action_index]['endTime']) - broadcast_start_timestamp).total_seconds() + self.EVENT_END_PADDING + skip_adjust_end
+                                break_start = (parse(play['playEvents'][action_index]['endTime']) - broadcast_start_timestamp).total_seconds() + self.EVENT_END_PADDING
                                 # add extra padding for overturned review plays
                                 if 'reviewDetails' in play:
                                     isOverturned = play['reviewDetails']['isOverturned']
