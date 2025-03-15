@@ -150,7 +150,7 @@ def create_game_listitem(game, game_day, start_inning, today):
     milb = None
     level_abbr = ''
     # MiLB titles and graphics
-    if game['teams']['home']['team']['sport']['id'] != 1:
+    if game['teams']['away']['team']['sport']['id'] != 1 and game['teams']['home']['team']['sport']['id'] != 1:
         # Skip MiLB games without any broadcast
         milb_broadcast = None
         if 'broadcasts' in game:
@@ -222,8 +222,12 @@ def create_game_listitem(game, game_day, start_inning, today):
 
         title = away_team + ' at ' + home_team
 
-        icon = 'https://img.mlbstatic.com/mlb-photos/image/upload/ar_167:215,c_crop/fl_relative,l_team:' + str(game['teams']['home']['team']['id']) + ':fill:spot.png,w_1.0,h_1,x_0.5,y_0,fl_no_overflow,e_distort:100p:0:200p:0:200p:100p:0:100p/fl_relative,l_team:' + str(game['teams']['away']['team']['id']) + ':logo:spot:current,w_0.38,x_-0.25,y_-0.16/fl_relative,l_team:' + str(game['teams']['home']['team']['id']) + ':logo:spot:current,w_0.38,x_0.25,y_0.16/w_750/team/' + str(game['teams']['away']['team']['id']) + '/fill/spot.png'
-        fanart = 'http://cd-images.mlbstatic.com/stadium-backgrounds/color/light-theme/1920x1080/%s.png' % game['venue']['id']
+        if game['teams']['away']['team']['sport']['id'] == 1 and game['teams']['home']['team']['sport']['id'] == 1:
+            icon = 'https://img.mlbstatic.com/mlb-photos/image/upload/ar_167:215,c_crop/fl_relative,l_team:' + str(game['teams']['home']['team']['id']) + ':fill:spot.png,w_1.0,h_1,x_0.5,y_0,fl_no_overflow,e_distort:100p:0:200p:0:200p:100p:0:100p/fl_relative,l_team:' + str(game['teams']['away']['team']['id']) + ':logo:spot:current,w_0.38,x_-0.25,y_-0.16/fl_relative,l_team:' + str(game['teams']['home']['team']['id']) + ':logo:spot:current,w_0.38,x_0.25,y_0.16/w_750/team/' + str(game['teams']['away']['team']['id']) + '/fill/spot.png'
+            fanart = 'http://cd-images.mlbstatic.com/stadium-backgrounds/color/light-theme/1920x1080/%s.png' % game['venue']['id']
+        else:
+            icon = ICON
+            fanart = FANART
 
         desc = ''
 
