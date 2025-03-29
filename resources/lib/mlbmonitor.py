@@ -30,6 +30,8 @@ class MLBMonitor(xbmc.Monitor):
     PITCH_START_PADDING = -1
     #Only skip if a break is at least this long
     MINIMUM_BREAK_DURATION = 5
+    #Additional padding for MLB games (2025)
+    MLB_PADDING = 39
 
     #Change monitor
     MAX_LEVERAGE = 11
@@ -928,7 +930,7 @@ class MLBMonitor(xbmc.Monitor):
         player.showSubtitles(False)
         xbmc.log(monitor_name + " captions disabled")
 
-    def game_monitor(self, skip_type, game_pk, broadcast_start_timestamp, stream_url, is_live, start_inning, start_inning_half):
+    def game_monitor(self, skip_type, game_pk, broadcast_start_timestamp, stream_url, is_live, start_inning, start_inning_half, milb=False):
         xbmc.log("Game monitor for " + game_pk + " starting")
 
         self.mlb_monitor_started = str(datetime.now())
@@ -958,7 +960,7 @@ class MLBMonitor(xbmc.Monitor):
 
             # fetch skip markers
             self.skip_to_players = None
-            skip_markers, self.skip_to_players = self.get_skip_markers(skip_type, game_pk, broadcast_start_timestamp, monitor_name, self.skip_to_players, stream_url, 0, start_inning, start_inning_half)
+            skip_markers, self.skip_to_players = self.get_skip_markers(skip_type, game_pk, broadcast_start_timestamp, monitor_name, self.skip_to_players, stream_url, 0, start_inning, start_inning_half, milb)
             xbmc.log(monitor_name + ' skip markers : ' + str(skip_markers))
 
             while not self.monitor.abortRequested():
@@ -991,6 +993,7 @@ class MLBMonitor(xbmc.Monitor):
                         while len(skip_markers) > 0 and current_time > current_break_end:
                             xbmc.log(monitor_name + " removed skip marker at " + str(current_break_end) + ", before current time " + str(current_time))
                             skip_markers.pop(0)
+                            current_break_end = skip_markers[0][1] + self.skip_adjust_start
                         # seek to end of break if we fall within skip marker range, then remove marker so user can seek backward freely
                         if len(skip_markers) > 0 and current_time >= current_break_start and current_time < current_break_end:
                             xbmc.log(monitor_name + " processed skip marker at " + str(current_break_end))
@@ -1003,7 +1006,7 @@ class MLBMonitor(xbmc.Monitor):
                             # refresh current time, and look ahead slightly
                             current_time = player.getTime() + 10
                             xbmc.log(monitor_name + ' refreshing skip markers from ' + str(current_time))
-                            skip_markers, self.skip_to_players = self.get_skip_markers(skip_type, game_pk, broadcast_start_timestamp, monitor_name, self.skip_to_players, stream_url, current_time)
+                            skip_markers, self.skip_to_players = self.get_skip_markers(skip_type, game_pk, broadcast_start_timestamp, monitor_name, self.skip_to_players, stream_url, current_time, milb)
                             xbmc.log(monitor_name + ' refreshed skip markers : ' + str(skip_markers))
 
         # continue monitoring if overlay is still active
@@ -1059,7 +1062,7 @@ class MLBMonitor(xbmc.Monitor):
 
 
     # calculate skip markers from gameday events
-    def get_skip_markers(self, skip_type, game_pk, broadcast_start_timestamp, monitor_name, skip_to_players, stream_url, current_time=0, start_inning=0, start_inning_half='top'):
+    def get_skip_markers(self, skip_type, game_pk, broadcast_start_timestamp, monitor_name, skip_to_players, stream_url, current_time=0, start_inning=0, start_inning_half='top', milb=False):
         xbmc.log(monitor_name + ' getting skip markers for skip type ' + str(skip_type))
         if current_time > 0:
             xbmc.log(monitor_name + ' searching beyond ' + str(current_time))
@@ -1079,6 +1082,12 @@ class MLBMonitor(xbmc.Monitor):
             event_start_padding = self.PITCH_START_PADDING
         else:
             event_start_padding = self.EVENT_START_PADDING
+        
+        event_end_padding = self.EVENT_END_PADDING
+        #extra padding for MLB games (2025)
+        if milb is False:
+        	event_start_padding += self.MLB_PADDING
+        	event_end_padding += self.MLB_PADDING
 
         # make sure we have play data
         if 'liveData' in json_source and 'plays' in json_source['liveData'] and 'allPlays' in json_source['liveData']['plays']:
@@ -1203,7 +1212,7 @@ class MLBMonitor(xbmc.Monitor):
                         if 'event' in playEvent['details'] and playEvent['details']['event'] in self.BREAK_TYPES:
                             # if we're in the process of skipping all breaks, treat the first break type we find as another inning break
                             if skip_type == 2 and previous_inning > 0:
-                                break_start = (parse(playEvent['startTime']) - broadcast_start_timestamp).total_seconds() + self.EVENT_END_PADDING
+                                break_start = (parse(playEvent['startTime']) - broadcast_start_timestamp).total_seconds() + event_end_padding
                                 previous_inning = 0
                             continue
                         else:
@@ -1249,7 +1258,7 @@ class MLBMonitor(xbmc.Monitor):
                                     # exit loop after found inning, if not skipping breaks
                                     if skip_type == 0:
                                         break
-                                break_start = (parse(play['playEvents'][action_index]['endTime']) - broadcast_start_timestamp).total_seconds() + self.EVENT_END_PADDING
+                                break_start = (parse(play['playEvents'][action_index]['endTime']) - broadcast_start_timestamp).total_seconds() + event_end_padding
                                 # add extra padding for overturned review plays
                                 if 'reviewDetails' in play:
                                     isOverturned = play['reviewDetails']['isOverturned']
