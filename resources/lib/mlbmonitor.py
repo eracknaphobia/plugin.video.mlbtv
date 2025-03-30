@@ -23,11 +23,12 @@ class MLBMonitor(xbmc.Monitor):
     BREAK_TYPES = ['Game Advisory', 'Pitching Substitution', 'Offensive Substitution', 'Defensive Sub', 'Defensive Switch', 'Runner Placed On Base', 'Injury']
     #These are the action events to keep, in addition to the last event of each at-bat, if we're skipping non-decision pitches
     ACTION_TYPES = ['Wild Pitch', 'Passed Ball', 'Stolen Base', 'Caught Stealing', 'Pickoff', 'Error', 'Out', 'Balk', 'Defensive Indiff', 'Other Advance']
+    #These are some idle events to skip
+    IDLE_TYPES = ['Mound Visit', 'Batter Timeout', 'Pitcher Step Off', 'challenge']
     #Pad events at both start (-) and end (+)
     EVENT_START_PADDING = -6
-    EVENT_END_PADDING = 5
-    #Also use pitch start padding for idle time / specific player skipping
-    PITCH_START_PADDING = -1
+    PITCH_END_PADDING = 0
+    ACTION_END_PADDING = 5
     #Only skip if a break is at least this long
     MINIMUM_BREAK_DURATION = 5
     #Additional padding for MLB games (2025)
@@ -1076,18 +1077,15 @@ class MLBMonitor(xbmc.Monitor):
 
         # calculate total skip time (for fun)
         total_skip_time = 0
-
-        # for skip types 3 (idle time) and 4 (specific players), use pitch start padding
-        if skip_type == 3 or skip_type == 4:
-            event_start_padding = self.PITCH_START_PADDING
-        else:
-            event_start_padding = self.EVENT_START_PADDING
         
-        event_end_padding = self.EVENT_END_PADDING
+        event_start_padding = self.EVENT_START_PADDING
+        pitch_end_padding = self.PITCH_END_PADDING
+        action_end_padding = self.ACTION_END_PADDING
         #extra padding for MLB games (2025)
         if milb is False:
         	event_start_padding += self.MLB_PADDING
-        	event_end_padding += self.MLB_PADDING
+        	pitch_end_padding += self.MLB_PADDING
+        	action_end_padding += self.MLB_PADDING
 
         # make sure we have play data
         if 'liveData' in json_source and 'plays' in json_source['liveData'] and 'allPlays' in json_source['liveData']['plays']:
@@ -1208,18 +1206,26 @@ class MLBMonitor(xbmc.Monitor):
 
                     # loop through events within each play
                     for index, playEvent in enumerate(play['playEvents']):
+                        # use action end padding by default, but we'll adjust this to pitch end padding as necessary for break types 3 and 4
+                        this_event_end_padding = action_end_padding
                         # always exclude break types
                         if 'event' in playEvent['details'] and playEvent['details']['event'] in self.BREAK_TYPES:
                             # if we're in the process of skipping all breaks, treat the first break type we find as another inning break
                             if skip_type == 2 and previous_inning > 0:
-                                break_start = (parse(playEvent['startTime']) - broadcast_start_timestamp).total_seconds() + event_end_padding
+                                break_start = (parse(playEvent['startTime']) - broadcast_start_timestamp).total_seconds() + action_end_padding
                                 previous_inning = 0
                             continue
                         else:
                             action_index = None
-                            # skip type 2 (all breaks), 3 (idle time), and 4 (specific batters/pitchers) will look at all plays with an endTime
-                            if skip_type <= 4 and 'endTime' in playEvent:
+                            # skip type 2 (all breaks) will look at all plays with an endTime
+                            if skip_type == 2 and 'endTime' in playEvent:
                                 action_index = index
+                            # skip type 3 (idle time) and 4 (specific batters/pitchers) will look at all non-idle plays with an endTime
+                            elif skip_type <= 4 and 'endTime' in playEvent and ('details' not in playEvent or 'description' not in playEvent['details'] or not any(substring in playEvent['details']['description'] for substring in self.IDLE_TYPES)):
+                                action_index = index
+                                # use pitch end padding for non-action plays
+                                if index < (len(play['playEvents'])-1) and ('details' not in playEvent or 'event' not in playEvent['details'] or not any(substring in playEvent['details']['event'] for substring in self.ACTION_TYPES)):
+                                    this_event_end_padding = pitch_end_padding
                             elif skip_type == 5:
                                 # skip type 5 excludes non-action pitches (events that aren't last in the at-bat and don't fall under action types)
                                 if index < (len(play['playEvents'])-1) and ('details' not in playEvent or 'event' not in playEvent['details'] or not any(substring in playEvent['details']['event'] for substring in self.ACTION_TYPES)):
@@ -1258,7 +1264,7 @@ class MLBMonitor(xbmc.Monitor):
                                     # exit loop after found inning, if not skipping breaks
                                     if skip_type == 0:
                                         break
-                                break_start = (parse(play['playEvents'][action_index]['endTime']) - broadcast_start_timestamp).total_seconds() + event_end_padding
+                                break_start = (parse(play['playEvents'][action_index]['endTime']) - broadcast_start_timestamp).total_seconds() + this_event_end_padding
                                 # add extra padding for overturned review plays
                                 if 'reviewDetails' in play:
                                     isOverturned = play['reviewDetails']['isOverturned']
