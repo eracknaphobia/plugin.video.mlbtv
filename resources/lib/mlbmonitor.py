@@ -33,6 +33,9 @@ class MLBMonitor(xbmc.Monitor):
     MINIMUM_BREAK_DURATION = 5
     #Additional padding for MLB games (2025)
     MLB_PADDING = 39
+    
+    #Additional Game Changer padding for MLB games (2025)
+    MLB_GAMECHANGER_PADDING = 20
 
     #Change monitor
     MAX_LEVERAGE = 11
@@ -1297,7 +1300,7 @@ class MLBMonitor(xbmc.Monitor):
         stream_refresh_sec = 1
         # check games every `refresh_sec` but return data from `delay_sec` ago to account for stream delay/buffering
         refresh_sec = game_refresh_sec
-        delay_sec = GAME_CHANGER_DELAY
+        delay_sec = GAME_CHANGER_DELAY + self.MLB_GAMECHANGER_PADDING
         games_buffer = deque(maxlen=int((delay_sec / refresh_sec) + 1))
         players_buffer = deque(maxlen=int((delay_sec / refresh_sec) + 1))
         innings_buffer = deque(maxlen=int((delay_sec / refresh_sec) + 1))
