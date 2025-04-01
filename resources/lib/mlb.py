@@ -571,21 +571,86 @@ def create_linear_channel_listitem(network):
 # display a Big Inning item within a game list
 def create_big_inning_listitem(game_day):
     try:
-    	display_title = LOCAL_STRING(30368)
-    	name = display_title
-    	
-    	desc = 'MLB Big Inning brings fans all the best action from around the league with live look-ins, breaking highlights and big moments as they happen all season long. Airing seven days a week on MLB.TV.'
-    	
-    	# create the list item
-    	liz=xbmcgui.ListItem(name)
-    	liz.setInfo( type="Video", infoLabels={ "Title": display_title, 'plot': desc } )
-    	liz.setProperty("IsPlayable", "true")
-    	icon = 'https://img.mlbstatic.com/mlb-images/image/private/ar_16:9,g_auto,q_auto:good,w_372,c_fill,f_jpg/mlb/uwr8vepua4t1fe8uwyki'
-    	fanart = 'https://img.mlbstatic.com/mlb-images/image/private/g_auto,c_fill,ar_16:9,q_60,w_1920/e_gradient_fade:15,x_0.6,b_black/mlb/uwr8vepua4t1fe8uwyki'
-    	liz.setArt({'icon': icon, 'thumb': icon, 'fanart': fanart})
-    	u=sys.argv[0]+"?mode="+str(301)+"&featured_video="+urllib.quote_plus(LOCAL_STRING(30367) + LOCAL_STRING(30368))+"&name="+urllib.quote_plus(LOCAL_STRING(30367) + LOCAL_STRING(30368))
-    	xbmcplugin.addDirectoryItem(handle=addon_handle,url=u,listitem=liz,isFolder=False)
-    	xbmcplugin.setContent(addon_handle, 'episodes')
+        # check when we last fetched the Big Inning schedule
+        today = localToEastern()
+        big_inning_date = str(settings.getSetting(id="big_inning_date"))
+
+        # if we've already fetched it today, use the cached schedule
+        if big_inning_date == today:
+            xbmc.log('Using cached Big Inning schedule')
+            big_inning_schedule = json.loads(settings.getSetting(id="big_inning_schedule"))
+        # otherwise, fetch a new big inning schedule
+        else:
+            xbmc.log('Fetching Big Inning schedule')
+            settings.setSetting(id='big_inning_date', value=today)
+            url = 'https://www.fubo.tv/welcome/channel/mlb-big-inning'
+
+            headers = {
+                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'accept-language': 'en-US,en;q=0.9',
+                'cache-control': 'no-cache',
+                'dnt': '1',
+                'pragma': 'no-cache',
+                'sec-fetch-dest': 'document',
+                'sec-fetch-mode': 'navigate',
+                'sec-fetch-site': 'none',
+                'sec-fetch-user': '?1',
+                'sec-gpc': '1',
+                'upgrade-insecure-requests': '1',
+                'user-agent': UA_PC
+            }
+            r = requests.get(url,headers=headers, verify=VERIFY)
+            #xbmc.log(r.text)
+
+            # parse the response
+            obj = json.loads(re.search(r'(?<=\"channelPrograms\":{\"live\":)(.+?(,\"totalPages\":1}))', re.sub(r'\\"', r'"', r.text)).group())
+            
+            big_inning_schedule = {}
+            for entry in obj['data']:
+                big_inning_date = get_eastern_game_date(parse(entry['airings'][0]['start']))
+                xbmc.log('Formatted date ' + big_inning_date)
+                # ignore dates in the past
+                if big_inning_date >= today:
+                    big_inning_start = str(UTCToLocal(parse(entry['airings'][0]['start'])))
+                    big_inning_end = str(UTCToLocal(parse(entry['airings'][0]['end'])))
+                    big_inning_schedule[big_inning_date] = {'start': big_inning_start, 'end': big_inning_end}
+            # save the scraped schedule
+            settings.setSetting(id='big_inning_schedule', value=json.dumps(big_inning_schedule))
+
+        if game_day in big_inning_schedule:
+            xbmc.log(game_day + ' has a scheduled Big Inning broadcast')
+            display_title = LOCAL_STRING(30368)
+
+            big_inning_start = parse(big_inning_schedule[game_day]['start'])
+            big_inning_end = parse(big_inning_schedule[game_day]['end'])
+
+            # format the time for display
+
+            game_time = get_display_time(big_inning_start) + ' - ' + get_display_time(big_inning_end)
+            now = datetime.now()
+            if now < big_inning_start:
+                game_time = colorString(game_time, UPCOMING)
+            elif now > big_inning_end:
+                game_time = colorString(game_time, FINAL)
+            elif now >= big_inning_start and now <= big_inning_end:
+                display_title = LOCAL_STRING(30367) + LOCAL_STRING(30368)
+                game_time = colorString(game_time, LIVE)
+            name = game_time + ' ' + display_title
+
+            desc = 'MLB Big Inning brings fans all the best action from around the league with live look-ins, breaking highlights and big moments as they happen all season long. Airing seven days a week on MLB.TV.'
+
+            # create the list item
+            liz=xbmcgui.ListItem(name)
+            liz.setInfo( type="Video", infoLabels={ "Title": display_title, 'plot': desc } )
+            liz.setProperty("IsPlayable", "true")
+            icon = 'https://img.mlbstatic.com/mlb-images/image/private/ar_16:9,g_auto,q_auto:good,w_372,c_fill,f_jpg/mlb/uwr8vepua4t1fe8uwyki'
+            fanart = 'https://img.mlbstatic.com/mlb-images/image/private/g_auto,c_fill,ar_16:9,q_60,w_1920/e_gradient_fade:15,x_0.6,b_black/mlb/uwr8vepua4t1fe8uwyki'
+            liz.setArt({'icon': icon, 'thumb': icon, 'fanart': fanart})
+            u=sys.argv[0]+"?mode="+str(301)+"&featured_video="+urllib.quote_plus(LOCAL_STRING(30367) + LOCAL_STRING(30368))+"&name="+urllib.quote_plus(LOCAL_STRING(30367) + LOCAL_STRING(30368))
+            xbmcplugin.addDirectoryItem(handle=addon_handle,url=u,listitem=liz,isFolder=False)
+            xbmcplugin.setContent(addon_handle, 'episodes')
+        else:
+            xbmc.log(game_day + ' does not have a scheduled Big Inning broadcast')
     except Exception as e:
         xbmc.log('big inning error : ' + str(e))
         pass
