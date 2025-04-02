@@ -583,7 +583,7 @@ def create_big_inning_listitem(game_day):
         else:
             xbmc.log('Fetching Big Inning schedule')
             settings.setSetting(id='big_inning_date', value=today)
-            url = 'https://www.fubo.tv/welcome/channel/mlb-big-inning'
+            url = 'https://api.fubo.tv/gg/series/123881219/live-programs?limit=14&languages=en&countrySlugs=USA'
 
             headers = {
                 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -603,17 +603,20 @@ def create_big_inning_listitem(game_day):
             #xbmc.log(r.text)
 
             # parse the response
-            obj = json.loads(re.search(r'(?<=\"channelPrograms\":{\"live\":)(.+?(,\"totalPages\":1}))', re.sub(r'\\"', r'"', r.text)).group())
+            json_source = r.json()
             
             big_inning_schedule = {}
-            for entry in obj['data']:
-                big_inning_date = get_eastern_game_date(parse(entry['airings'][0]['start']))
-                xbmc.log('Formatted date ' + big_inning_date)
-                # ignore dates in the past
-                if big_inning_date >= today:
-                    big_inning_start = str(UTCToLocal(parse(entry['airings'][0]['start'])))
-                    big_inning_end = str(UTCToLocal(parse(entry['airings'][0]['end'])))
-                    big_inning_schedule[big_inning_date] = {'start': big_inning_start, 'end': big_inning_end}
+            if 'data' in json_source:
+                for entry in json_source['data']:
+                    if 'airings' in entry and len(entry['airings']) > 0 and entry['airings'][0] and 'accessRights' in entry['airings'][0] and 'live' in entry['airings'][0]['accessRights']:
+                        airing = entry['airings'][0]['accessRights']['live']
+                        big_inning_date = get_eastern_game_date(parse(airing['startTime']))
+                        xbmc.log('Formatted date ' + big_inning_date)
+                        # ignore dates in the past
+                        if big_inning_date >= today:
+                            big_inning_start = str(UTCToLocal(parse(airing['startTime'])))
+                            big_inning_end = str(UTCToLocal(parse(airing['endTime'])))
+                            big_inning_schedule[big_inning_date] = {'start': big_inning_start, 'end': big_inning_end}
             # save the scraped schedule
             settings.setSetting(id='big_inning_schedule', value=json.dumps(big_inning_schedule))
 
