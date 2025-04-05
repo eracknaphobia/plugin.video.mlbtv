@@ -32,10 +32,10 @@ class MLBMonitor(xbmc.Monitor):
     #Only skip if a break is at least this long
     MINIMUM_BREAK_DURATION = 5
     #Additional padding for MLB games (2025)
-    MLB_PADDING = 39
+    MLB_PADDING = 2
     
-    #Additional Game Changer padding for MLB games (2025)
-    MLB_GAMECHANGER_PADDING = 20
+    #Additional Game Changer padding for MLB games, in increments of 10
+    MLB_GAMECHANGER_PADDING = 0
 
     #Change monitor
     MAX_LEVERAGE = 11
