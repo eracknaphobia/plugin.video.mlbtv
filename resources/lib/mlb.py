@@ -946,7 +946,7 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
                     # create an item for the video stream
                     listitem = stream_to_listitem(stream_url, headers, description, name, icon, fanart)
                     # pass along the highlights and the video stream item to play as a playlist and stop processing here
-                    highlight_select_stream(json_source['highlights']['highlights']['items'], catchup=listitem)
+                    highlight_select_stream(json_source['dates'][0]['games'][0]['content']['highlights']['highlights']['items'], catchup=listitem)
                     sys.exit()
                 # beginning or inning
                 elif p == 1 or p > 2:
