@@ -35,7 +35,7 @@ class MLBMonitor(xbmc.Monitor):
     MLB_PADDING = 2
     
     #Additional Game Changer padding for MLB games, in increments of 10
-    MLB_GAMECHANGER_PADDING = 0
+    MLB_GAMECHANGER_PADDING = 10
 
     #Change monitor
     MAX_LEVERAGE = 11
