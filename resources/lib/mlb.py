@@ -230,8 +230,8 @@ def create_game_listitem(game, game_day, start_inning, today, nonentitlement_dat
         desc = ''
 
     is_free = False
-    if 'content' in game and 'media' in game['content'] and 'freeGame' in game['content']['media']:
-        is_free = game['content']['media']['freeGame']
+    if 'broadcasts' in game and len(game['broadcasts']) > 0 and 'freeGame' in game['broadcasts'][0] and game['broadcasts'][0]['freeGame'] is True:
+        is_free = True
 
     fav_game = False
     if game['teams']['away']['team']['name'] in FAV_TEAM:
@@ -741,7 +741,7 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
                 # check if our favorite team (if defined) is associated with this stream
                 # or if no favorite team match, look for the home or national streams
                 #if (FAV_TEAM != 'None' and 'mediaFeedSubType' in item and item['mediaFeedSubType'] == getFavTeamId()) or (selected_content_id is None and 'mediaFeedType' in item and (item['mediaFeedType'] == 'HOME' or item['mediaFeedType'] == 'NATIONAL' )):
-                if (FAV_TEAM != 'None' and ((item['homeAway'] == 'home' and json_source['dates'][0]['games'][0]['teams']['home']['team']['id'] == getFavTeamId()) or (item['homeAway'] == 'away' and json_source['dates'][0]['games'][0]['teams']['away']['team']['id'] == getFavTeamId()))) or (selected_content_id is None and (item['homeAway'] == 'home' or item['isNational'] == True )):
+                if (FAV_TEAM != 'None' and ((item['homeAway'] == 'home' and str(json_source['dates'][0]['games'][0]['teams']['home']['team']['id']) == str(getFavTeamId())) or (item['homeAway'] == 'away' and str(json_source['dates'][0]['games'][0]['teams']['away']['team']['id']) == str(getFavTeamId())))) or (selected_content_id is None and (item['homeAway'] == 'home' or item['isNational'] == True )):
                     # prefer live streams (suspended games can have both a live and archived stream available)
                     if item['mediaState']['mediaStateCode'] == 'MEDIA_ON':
                         selected_content_id = item['mediaId']
@@ -751,7 +751,7 @@ def stream_select(game_pk, spoiler='True', suspended='False', start_inning='Fals
                         #    selected_media_type = item['mediaFeedType']
                         # once we've found a fav team live stream, we don't need to search any further
                         #if FAV_TEAM != 'None' and 'mediaFeedSubType' in item and item['mediaFeedSubType'] == getFavTeamId():
-                        if FAV_TEAM != 'None' and ((item['homeAway'] == 'home' and json_source['dates'][0]['games'][0]['teams']['home']['team']['id'] == getFavTeamId()) or (item['homeAway'] == 'away' and json_source['dates'][0]['games'][0]['teams']['away']['team']['id'] == getFavTeamId())):
+                        if FAV_TEAM != 'None' and ((item['homeAway'] == 'home' and str(json_source['dates'][0]['games'][0]['teams']['home']['team']['id']) == str(getFavTeamId())) or (item['homeAway'] == 'away' and str(json_source['dates'][0]['games'][0]['teams']['away']['team']['id']) == str(getFavTeamId()))):
                             break
                     # fall back to the first available archive stream, but keep search in case there is a live stream (suspended)
                     elif item['mediaState']['mediaStateCode'] == 'MEDIA_ARCHIVE' and selected_content_id is None:
