@@ -230,8 +230,8 @@ def create_game_listitem(game, game_day, start_inning, today, nonentitlement_dat
         desc = ''
 
     is_free = False
-    if 'content' in game and 'media' in game['content'] and 'freeGame' in game['content']['media']:
-        is_free = game['content']['media']['freeGame']
+    if 'broadcasts' in game and len(game['broadcasts']) > 0 and 'freeGame' in game['broadcasts'][0] and game['broadcasts'][0]['freeGame'] is True:
+        is_free = True
 
     fav_game = False
     if game['teams']['away']['team']['name'] in FAV_TEAM:
