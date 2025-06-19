@@ -608,8 +608,8 @@ def create_big_inning_listitem(game_day):
             big_inning_schedule = {}
             if 'data' in json_source:
                 for entry in json_source['data']:
-                    if 'airings' in entry and len(entry['airings']) > 0 and entry['airings'][0] and 'accessRights' in entry['airings'][0] and 'live' in entry['airings'][0]['accessRights']:
-                        airing = entry['airings'][0]['accessRights']['live']
+                    if 'airings' in entry and len(entry['airings']) > 0 and entry['airings'][0] and 'accessRightsV2' in entry['airings'][0] and 'live' in entry['airings'][0]['accessRightsV2']:
+                        airing = entry['airings'][0]['accessRightsV2']['live']
                         big_inning_date = get_eastern_game_date(parse(airing['startTime']))
                         xbmc.log('Formatted date ' + big_inning_date)
                         # ignore dates in the past

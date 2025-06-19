@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.mlbtv" name="MLB.TV®" version="2025.4.14+matrix.1" provider-name="eracknaphobia, tonywagner">
+<addon id="plugin.video.mlbtv" name="MLB.TV®" version="2025.6.19+matrix.1" provider-name="eracknaphobia, tonywagner">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.pytz" />
@@ -22,7 +22,7 @@
         </description>
         <disclaimer lang="en_GB">Requires an MLB.tv account</disclaimer>
         <news>
-            - Fix play favorite team on launch (thanks thromer and tonywagner)
+            - updated Big Inning schedule
         </news>
         <language>en</language>
         <platform>all</platform>
