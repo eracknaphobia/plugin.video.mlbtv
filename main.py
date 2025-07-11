@@ -180,6 +180,12 @@ elif mode == 500:
     mlbmonitor = MLBMonitor()
     mlbmonitor.change_monitor(blackout.split(','))
 
+# Stream Finder
+elif mode == 501:
+    from resources.lib.mlbmonitor import MLBMonitor
+    mlbmonitor = MLBMonitor()
+    mlbmonitor.finder_monitor(blackout.split(','))
+
 # play all recaps or condensed games for selected date
 elif mode == 900:
     playAllHighlights(stream_date)
