@@ -1030,7 +1030,8 @@ class MLBMonitor(xbmc.Monitor):
                         while len(skip_markers) > 0 and current_time > current_break_end:
                             xbmc.log(monitor_name + " removed skip marker at " + str(current_break_end) + ", before current time " + str(current_time))
                             skip_markers.pop(0)
-                            current_break_end = skip_markers[0][1] + self.skip_adjust_start
+                            if len(skip_markers) > 0:
+                                current_break_end = skip_markers[0][1] + self.skip_adjust_start
                         # seek to end of break if we fall within skip marker range, then remove marker so user can seek backward freely
                         if len(skip_markers) > 0 and current_time >= current_break_start and current_time < current_break_end:
                             xbmc.log(monitor_name + " current time " + str(current_time) + " falls within skip time from " + str(current_break_start) + " - "  + str(current_break_end))
