@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.mlbtv" name="MLB.TV®" version="2025.8.20+matrix.1" provider-name="eracknaphobia, tonywagner">
+<addon id="plugin.video.mlbtv" name="MLB.TV®" version="2026.2.27+matrix.1" provider-name="eracknaphobia, tonywagner">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.pytz" />
@@ -26,6 +26,7 @@
             - stream finder extra innings LI correction
             - skip bugfix at end-of-game
             - auto upload Stream Finder form
+            - proxy playback fix (used for stream length padding)
         </news>
         <language>en</language>
         <platform>all</platform>

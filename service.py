@@ -113,7 +113,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
           self.end_headers()
 
-          content = response.content.decode('utf8')
+          content = response.content.decode('utf8', errors='ignore')
         
           # remove subtitles and extraneous lines for Kodi Inputstream Adaptive compatibility
           content = re.sub(r"(?:#EXT-X-MEDIA:TYPE=SUBTITLES[\S]+\n)", r"", content, flags=re.M)
@@ -135,7 +135,7 @@ class RequestHandler(BaseHTTPRequestHandler):
           for line in line_array:
               if line.startswith('#'):
                   # look for uri parameters within non-key "#" lines
-                  if playlist_type == 'master' and KEY_TEXT not in line and URI_START_DELIMETER in line:
+                  if (playlist_type == 'master' and KEY_TEXT not in line and URI_START_DELIMETER in line) or (KEY_TEXT in line and URI_START_DELIMETER in line):
                       line_split = line.split(URI_START_DELIMETER)
                       url_split = line_split[1].split(URI_END_DELIMETER, 1)
                       absolute_url = urljoin(url, url_split[0])
