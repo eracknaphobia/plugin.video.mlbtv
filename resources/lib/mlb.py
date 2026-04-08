@@ -1452,25 +1452,44 @@ def playAllHighlights(stream_date):
 
     for game in json_source['dates'][0]['games']:
         try:
+            icon = 'https://img.mlbstatic.com/mlb-photos/image/upload/ar_167:215,c_crop/fl_relative,l_team:' + str(game['teams']['home']['team']['id']) + ':fill:spot.png,w_1.0,h_1,x_0.5,y_0,fl_no_overflow,e_distort:100p:0:200p:0:200p:100p:0:100p/fl_relative,l_team:' + str(game['teams']['away']['team']['id']) + ':logo:spot:current,w_0.38,x_-0.25,y_-0.16/fl_relative,l_team:' + str(game['teams']['home']['team']['id']) + ':logo:spot:current,w_0.38,x_0.25,y_0.16/w_750/team/' + str(game['teams']['away']['team']['id']) + '/fill/spot.png'
             fanart = 'http://cd-images.mlbstatic.com/stadium-backgrounds/color/light-theme/1920x1080/%s.png' % game['venue']['id']
+            title = None
+            clip_url = None
             if 'highlights' in game['content']:
                 for item in game['content']['highlights']['highlights']['items']:
-                    try:
-                        title = item['headline'].strip().lower()
-                        if (n == 0 and (' vs ' in title or ' vs. ' in title or ' versus ' in title or ' at ' in title or '@' in title) and (title.endswith(' highlights') or title.endswith(' recap'))) or (n == 1 and 'condensed' in title):
-                            for playback in item['playbacks']:
-                                if 'hlsCloud' in playback['name']:
-                                    clip_url = playback['url']
-                                    break
-                            listitem = xbmcgui.ListItem(item['headline'])
-                            icon = item['image']['cuts'][0]['src']
-                            listitem.setArt({'icon': icon, 'thumb': icon, 'fanart': fanart})
-                            listitem.setInfo(type="Video", infoLabels={"Title": item['headline']})
-                            xbmc.log('adding recap to playlist : ' + item['headline'])
-                            playlist.add(clip_url, listitem)
+                    for keywordsDisplay in item['keywordsDisplay']:
+                        if keywordsDisplay['displayName'] == 'Condensed Game':
+                            title = item['headline']
+                            if (n == 1):
+                                for playback in item['playbacks']:
+                                    if 'hlsCloud' in playback['name']:
+                                        clip_url = playback['url']
+                                        break
+                        if title is not None:
                             break
-                    except:
-                        pass
+                    if title is not None:
+                        break
+                        
+                if (n == 0):
+                    title = title.replace('Condensed Game', 'Game Recap')
+                    for item in game['content']['highlights']['highlights']['items']:
+                        for keywordsDisplay in item['keywordsDisplay']:
+                            if keywordsDisplay['displayName'] == 'Game Recap':
+                                for playback in item['playbacks']:
+                                    if 'hlsCloud' in playback['name']:
+                                        clip_url = playback['url']
+                                        break
+                                break
+                        if clip_url is not None:
+                            break
+                                                
+                if clip_url is not None:
+                    listitem = xbmcgui.ListItem(title)
+                    listitem.setArt({'icon': icon, 'thumb': icon, 'fanart': fanart})
+                    listitem.setInfo(type="Video", infoLabels={"Title": title})
+                    xbmc.log('adding video to playlist : ' + title)
+                    playlist.add(clip_url, listitem)
         except:
             pass
 
