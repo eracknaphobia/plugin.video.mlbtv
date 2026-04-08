@@ -115,6 +115,8 @@ def todays_games(game_day, start_inning='False', sport=MLB_ID, teams='None'):
         from .account import Account
         account = Account()
         entitlements = json.loads(account.get_entitlements())
+        if today == game_day and 'MASN_110' in entitlements:
+            create_linear_channel_listitem('MASN')
         if today == game_day and ('MLBN' in entitlements or 'MLBALL' in entitlements or 'MLBTVMLBNADOBEPASS' in entitlements or 'EXECMLB' in entitlements):
             create_linear_channel_listitem('MLBN')
         if today == game_day and 'SNLA_119' in entitlements:
@@ -542,7 +544,14 @@ def featured_videos(featured_video=None):
 # display a linear channel item within a game list
 def create_linear_channel_listitem(network):
     try:
-        if network == 'MLBN':
+        if network == 'MASN':
+            title = LOCAL_STRING(30367) + LOCAL_STRING(30446)
+            description = LOCAL_STRING(30447)
+            video_url = 'MASN_ONE_LIVE'
+            icon = 'https://img.mlbstatic.com/mlb-images/image/upload/t_16x9/t_w640/v1745242435/mlb/jov4fxbzmqikc8umj5kr.png'
+            fanart = FANART
+            mode = 302
+        elif network == 'MLBN':
             title = LOCAL_STRING(30367) + LOCAL_STRING(30438)
             description = LOCAL_STRING(30439)
             video_url = 'https://falcon.mlbinfra.com/api/v1/linear/mlbn'
