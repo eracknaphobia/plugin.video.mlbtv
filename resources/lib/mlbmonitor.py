@@ -1310,7 +1310,7 @@ class MLBMonitor(xbmc.Monitor):
                                             isOverturned = additionalReview['isOverturned']
                                             if isOverturned == True:
                                                 break
-                                    if isOverturned == True:
+                                    if isOverturned == True and play['reviewDetails']['reviewType'] != 'MJ':
                                         break_start += 40
 
         xbmc.log(monitor_name + ' found ' + str(timedelta(seconds=total_skip_time)) + ' total skip time')
