@@ -286,6 +286,10 @@ def create_game_listitem(game, game_day, start_inning, today, nonentitlement_dat
                     game_time = 'T' + str(relative_inning)
                 else:
                     game_time = display_time
+            # if we're hiding spoilers
+            elif spoiler == 'False':
+                game_time = display_time
+            # otherwise active games show the inning
             elif game_state != 'Final' and game['status']['abstractGameState'] == 'Live' and 'linescore' in game:
                 if game['linescore']['isTopInning']:
                     # up triangle
@@ -296,10 +300,7 @@ def create_game_listitem(game, game_day, start_inning, today, nonentitlement_dat
                     # top_bottom = u"\u25BC"
                     top_bottom = "B"
 
-                if game['linescore']['currentInning'] >= game['scheduled_innings'] and spoiler == 'False':
-                    game_time = str(game['scheduled_innings']) + 'th+'
-                else:
-                    game_time = top_bottom + ' ' + game['linescore']['currentInningOrdinal']
+                game_time = top_bottom + ' ' + game['linescore']['currentInningOrdinal']
 
             try:
                 if 'resumeGameDate' in game or 'resumedFromDate' in game:
@@ -320,7 +321,10 @@ def create_game_listitem(game, game_day, start_inning, today, nonentitlement_dat
             except:
                 pass
 
-        if game_state == 'Final' or game_state == 'Postponed':
+        if spoiler == 'False':
+            game_time = colorString(game_time, LIVE)
+            
+        elif game_state == 'Final' or game_state == 'Postponed':
             game_time = colorString(game_time, FINAL)
 
         elif game['status']['abstractGameState'] == 'Live':
