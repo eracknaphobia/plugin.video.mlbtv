@@ -140,19 +140,31 @@ elif mode == 110:
 
 # Goto Date
 elif mode == 200:
-    search_txt = ''
     dialog = xbmcgui.Dialog()
-    game_day = dialog.input('Enter date (yyyy-mm-dd)', type=xbmcgui.INPUT_ALPHANUM)
-    mat = re.match(r'(\d{4})-(\d{2})-(\d{2})$', game_day)
-    if mat is not None:
-        # Refresh will erase history, so navigating back won't bring up the date prompt again
-        xbmc.executebuiltin('Container.Refresh("plugin://plugin.video.mlbtv/?mode=101&game_day='+game_day+'&start_inning='+str(start_inning)+'")')
-    else:
-        if game_day != '':
-            dialog = xbmcgui.Dialog()
-            dialog.ok(LOCAL_STRING(30365),LOCAL_STRING(30366))
+    # INPUT_DATE is only available as dd/mm/yyyy
+    game_day_raw = dialog.input('dd/mm/yyyy', type=xbmcgui.INPUT_DATE)
 
+    if not game_day_raw:
         sys.exit()
+
+    try:
+        game_day_raw = game_day_raw.replace(" ", "")
+        day, month, year = game_day_raw.split("/")
+        
+        # Auto-complete 2-digit year format (e.g. "25" -> "2025")
+        if len(year) == 2:
+            year = "20" + year
+
+        parsed_date = datetime.strptime(f"{day}/{month}/{year}", "%d/%m/%Y")
+        game_day = parsed_date.strftime("%Y-%m-%d")
+
+    except ValueError:
+        dialog.ok(LOCAL_STRING(30365), LOCAL_STRING(30366))
+        sys.exit()
+
+    # Refresh will erase history, so navigating back won't show the date prompt again
+    xbmc.executebuiltin('Container.Refresh("plugin://plugin.video.mlbtv/?mode=101&game_day='+ game_day +'&start_inning=' + str(start_inning) + '")')
+
 
 # Featured Videos
 elif mode == 300:
